@@ -1,9 +1,12 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class httpc {
 
@@ -70,8 +73,11 @@ public class httpc {
 	private void makeCallout(String[] args) {
 		BufferedWriter bw = null;
 		BufferedReader br = null;
+		BufferedReader brFile = null;
+		boolean dflag = false;
+		boolean fflag = false;
+		String data ="";
 		
-		// TODO Auto-generated method stub
 		String method = args[0].equals("get") ? "GET" : "POST";
 		int argLength = args.length;
 		int PORT = 80;
@@ -81,20 +87,87 @@ public class httpc {
 		String host ="";
 		String path ="";
 		String httpVersion = "HTTP/1.0";
+		ArrayList<String> headers = new ArrayList<String>();
 		
 		boolean displayHeader = false;
 		// Extract URL
 		try {
 			for (int i = 1; i < argLength; ++i) {
 	            String token = args[i];
-	            
 	            switch (token) {
+	            case "-d":
+                    if (method.equals("GET")) {
+                        System.out.println("-d: GET does not allow inline data");
+                        return;
+                    } else {
+                        if (dflag) {
+                            System.out.println("-d: duplicate option");
+                            return;
+                        } else if (fflag) {
+                            System.out.println("-d: -d and -f can not be used together");
+                            return;
+                        } else if (argLength > i++ && !args[i].startsWith("http://" ) ) {
+                            data = args[i] ;
+                            dflag = true;
+                        } else {
+                            System.out.println("-d: missing inline data");
+                            return;
+                        }
+                    }
+                    break;
+	            case "-f":
+                    if (method.equals("GET")) {
+                        System.out.println("-f: GET does not allow file data");
+                        return;
+                    } else {
+                        if (fflag) {
+                            System.out.println("-f: duplicate option");
+                            return;
+                        } else if (dflag) {
+                            System.out.println("-f: -d and -f can not be used together");
+                            return;
+                        } else if (argLength > i++ && !args[i].startsWith("http://" ) ) {
+                            String filename = args[i];
+                            File file = new File(filename);
+                            String content = "";
+                            if (file.exists()) {
+                            	brFile = new BufferedReader(new FileReader(file));
+                                String line;
+                                while ((line = brFile.readLine()) != null) {
+                                    content += line + "\r\n";
+                                }
+                                data += "--" + "***" + "\r\n";
+                                data += "Content-Disposition: form-data; name=\"file\"; filename=" + filename + "\r\n";
+                                data += "Content-Type: text/plain" + "\r\n";
+                                data += "Content-Length:" + content.length() + "\r\n";
+                                data += "\r\n";                                                             
+                                data += content + "\r\n";
+                                data += "--"  +"***" + "--" +"\r\n";
+                                fflag = true;
+                            } else {
+                                System.out.println(filename + "File does not exist");
+                                return;
+                            }
+                        } else {
+                            System.out.println("-f: missing file name");
+                            return;
+                        }
+                    }
+                    break;
+	            case "-h":
+                    if (argLength > i++ && args[i].contains(":") && !args[i].startsWith("http://" ) ) {
+                        headers.add(args[i]);
+                    } else {
+                        System.out.println("-h: missing or incorrect key:value pair(s)");
+                        return;
+                    }
+                    break;
 	            case "-v":
 	            	displayHeader = true;
 	            	break;
 	             default :
 	            	 if (url.isEmpty()) {
-	                     if (token.length() > 6 && token.substring(0, 7).equals("http://")) {
+	                     if (token.length() > 6 && token.startsWith("http://" )) {
 	                         url = token;
 	                     } else {
 	                         System.out.println(token + ": invalid command");
@@ -130,13 +203,27 @@ public class httpc {
 			//Connection TCP
 			Socket socket = new Socket(InetAddress.getByName(host), PORT);
 			
-			//Request
+			//Build Request
 			bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"));
             bw.write(method + " " + path + " " + httpVersion +"\r\n");
             bw.write("Host: " + host+"\r\n");
             bw.write("User-Agent: " + USER_AGENT +"\r\n");
+            if (fflag)
+                bw.write("Content-Type: multipart/form-data; boundary=" + "***" + "\r\n");
+            //Attach headers
+            if (!headers.isEmpty()) {
+                for (String header : headers) {
+                    bw.write(header + "\r\n");
+                }
+            }
+            //Add data
+            if (!data.isEmpty()) {
+                bw.write("Content-Length: " + data.length() + "\r\n");
+            }
             
             bw.write("\r\n");
+            bw.write(data);
+            
             bw.flush();
             
             //Response
@@ -144,7 +231,7 @@ public class httpc {
         	System.out.println("Response");
 
             String responseLine;
-            String  responseHeader = "";
+            String responseHeader = "";
             String responseBody = "";
             boolean headerCheck = false;
             while ((responseLine = br.readLine()) != null) {
@@ -168,7 +255,7 @@ public class httpc {
             System.out.println(responseString);
             
 			}catch(Exception e) {
-			System.out.println("!!!!!!!!!!!!!!!!!Exception");
+			System.out.println("Exception");
 			System.out.println(e);
 		}
 	}
