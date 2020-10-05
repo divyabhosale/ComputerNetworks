@@ -2,6 +2,8 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
@@ -13,6 +15,7 @@ public class httpClient {
 	
 	BufferedWriter bw = null;
 	BufferedReader br = null;
+	BufferedWriter bwF = null;
 	boolean dflag = false;
 	boolean fflag = false;
 	BufferedReader brFile = null;
@@ -87,7 +90,7 @@ public class httpClient {
             if(displayHeader)
             	responseString += responseHeader;
             responseString += responseBody;
-            System.out.println(responseString);
+           // System.out.println(responseString);
             
 			}catch(Exception e) {
 			System.out.println("Exception");
@@ -170,7 +173,7 @@ public class httpClient {
         if(displayHeader)
         	responseString += responseHeader;
         responseString += responseBody;
-        System.out.println(responseString);
+       // System.out.println(responseString);
         
 		}catch(Exception e) {
 		System.out.println("Exception");
@@ -188,13 +191,26 @@ public class httpClient {
 		ArrayList<String> headers = new ArrayList<String>();
 		String method = args[0].equals("get") ? "GET" : "POST";
 		int argLength = args.length;
-		
+		boolean writeInFile = false;
 		boolean displayHeader = false;
 		
 		try {
 			for (int i = 1; i < argLength; ++i) {
 	            String token = args[i];
 	            switch (token) {
+	            case "-o":
+                    if (argLength > i++ && !args[i].startsWith("http://" )) {
+                        String oFilename = args[i];
+                        File oFile = new File(oFilename);
+                        oFile.createNewFile();
+                        bwF = new BufferedWriter(new FileWriter(oFile));
+                        writeInFile = true;
+                        
+                    } else {
+                        System.out.println("-o: missing a output file name");
+                        return "ERROR";
+                    }
+                    break;
 	            case "-d":
                     if (method.equals("GET")) {
                         System.out.println("-d: GET does not allow inline data");
@@ -280,9 +296,7 @@ public class httpClient {
 	                 break;
 	            }
 			}
-		}catch(Exception e) {
-				System.out.println("Exception: "+e);
-			}
+		
 		if(method == "GET") {
 			System.out.println("url"+url);
 			System.out.println("headers"+headers);
@@ -290,7 +304,38 @@ public class httpClient {
 		}
 		else
 			response = postRequest(url,headers,displayHeader,data);
-			
+		
+		if(writeInFile) {
+			try {
+				bwF.write(response);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			response ="";
+		}
+		
+		}catch(Exception e) {
+			System.out.println("Exception: "+e);
+		}
+	 finally {
+        try {
+            if (null != bw) {
+                bw.close();
+            }
+            if (null != br) {
+                br.close();
+            }
+            if (null != brFile) {
+            	brFile.close();
+            }
+            if (null != bwF) {
+                bwF.close();
+            }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
 		return response;
 	}
 	

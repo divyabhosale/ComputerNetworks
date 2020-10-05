@@ -3,7 +3,7 @@ public class httpc {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		
+		String result= "";
 		if (args.length == 0 || (args.length == 1 && args[0].equals("help"))) {
             String outputString = "\n";
             outputString += "httpc is a curl-like application but supports HTTP protocol only.\n";
@@ -49,14 +49,12 @@ public class httpc {
                     break;
                 case "get": 
                 	httpClient httpGet = new httpClient();
-                	String result= "";
                 	result = httpGet.processRequest(args);
                 	break;
                 
                 case "post": 
                 	httpClient httpPost = new httpClient();
-                	String resultPost= "";
-                	resultPost = httpPost.processRequest(args);
+                	result = httpPost.processRequest(args);
                     break;
                 
                 default:
@@ -65,6 +63,7 @@ public class httpc {
             }
         }
 
+		System.out.println(result);
 
 	}
 }
