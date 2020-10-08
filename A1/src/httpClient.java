@@ -8,9 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.URL;
 import java.util.ArrayList;
-
 public class httpClient {
 	
 	BufferedWriter bw = null;
@@ -93,8 +91,7 @@ public class httpClient {
            // System.out.println(responseString);
             
 			}catch(Exception e) {
-			System.out.println("Exception");
-			System.out.println(e);
+				System.out.println("ERROR in command");
 		}
 		
 		return responseString;
@@ -140,10 +137,15 @@ public class httpClient {
         }
         //Add data
         if (!data.isEmpty()) {
-            bw.write("Content-Length: " + data.length() + "\r\n");
+        	
+        	if(data.contains(":") && data.startsWith("{") && data.endsWith("}")) 
+        		data = convertToJson(data);
+        	//data = "{\"name\": \"Sam Smith\", \"technology\": \"Python\"}";
+        	bw.write("Content-Length: " + data.length() + "\r\n");
         }
         
         bw.write("\r\n");
+        System.out.println("Data"+data);
         bw.write(data);
         
         bw.flush();
@@ -176,12 +178,12 @@ public class httpClient {
        // System.out.println(responseString);
         
 		}catch(Exception e) {
-		System.out.println("Exception");
-		System.out.println(e);
+			System.out.println("ERROR in command");
 	}
 
 		return responseString;
 	}
+
 
 	public String processRequest(String args[]) {
 		
@@ -316,7 +318,7 @@ public class httpClient {
 		}
 		
 		}catch(Exception e) {
-			System.out.println("Exception: "+e);
+			System.out.println("ERROR in command");
 		}
 	 finally {
         try {
@@ -333,10 +335,42 @@ public class httpClient {
                 bwF.close();
             }
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+        	System.out.println("ERROR in command");
         }
     }
 		return response;
+	}
+	
+
+	private String convertToJson(String data) throws Exception {
+		// TODO Auto-generated method stub
+		String formattedJSON = "{";
+		data = data.replace("{", "");
+		data = data.replace("}", "");
+		String[] dataArray = data.split(",");
+		
+		for(String d : dataArray) {
+			System.out.println(d);
+			String[] dataKeyValue = d.split(":");
+			
+			System.out.println(dataKeyValue[0]);
+			System.out.println(dataKeyValue[1]);
+			Boolean numeric = true;
+			try {
+	           Double.parseDouble(dataKeyValue[1]);
+	        } catch (NumberFormatException e) {
+	            numeric = false;
+	        }
+			
+			if(numeric)
+				formattedJSON += "\""+ dataKeyValue[0].trim() + "\":" +  dataKeyValue[1].trim() + ",";
+			else
+				formattedJSON += "\""+ dataKeyValue[0].trim() + "\":" + "\""+ dataKeyValue[1].trim() + "\",";
+
+		}
+		formattedJSON = formattedJSON.substring(0, formattedJSON.length() - 1) +"}";
+		System.out.println(formattedJSON);
+		return formattedJSON;
 	}
 	
 }
