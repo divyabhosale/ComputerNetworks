@@ -98,10 +98,7 @@ public class httpClient {
             	//Redirect Code
                 if (redirectTo && responseLine.length() > 10 && responseLine.substring(0, 10).equals("Location: ")) {
                     String redirectLocation = responseLine.substring(10, responseLine.length());
-                    // determine relative/absolute redirect
-                    //if (redirectLocation.length() >= 7 && (redirectLocation.substring(0, 7).equals("http://")) {
-                        url = redirectLocation;
-                    //} 
+                    url = redirectLocation;                     
                     System.out.println("Redirecting to:" + url );
                     if(redirectionAttempt <=5)
                     redirectResponseString = getRequest(url, headers,displayHeader,++redirectionAttempt);
