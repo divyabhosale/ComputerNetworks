@@ -23,11 +23,13 @@ public class httpClient {
     String httpVersion = "HTTP/1.0";
 	
 
-	public String getRequest(String url, ArrayList<String> headers,boolean displayHeader) {
+	public String getRequest(String url, ArrayList<String> headers,boolean displayHeader, int redirectionAttempt) {
 	
 		String responseString ="";
+		String redirectResponseString ="";
 		String host ="";
 		String path ="";
+		CharSequence status301 = "301";
 		try {
 			//Set host and path
 			if (url.isEmpty()) {
@@ -42,6 +44,12 @@ public class httpClient {
 	                path = url.substring(separator);
 	            }
 	        }
+			
+			
+			if(path.equals(""))
+				path="/";
+			//System.out.println("host "+host);
+			//System.out.println("path "+path);
 			//Connection TCP
 			Socket socket = new Socket(InetAddress.getByName(host), PORT);
 			
@@ -64,14 +72,20 @@ public class httpClient {
             
             //Response
             br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        	System.out.println("Response");
+        	//System.out.println("Response");
 
             String responseLine;
             String responseHeader = "";
             String responseBody = "";
+            Boolean redirectTo = false;
+            Boolean redirectStatus = false;
             boolean headerCheck = false;
             while ((responseLine = br.readLine()) != null) {
             	//System.out.println(responseLine);
+            	if (!redirectStatus && responseLine.contains(status301)) {
+            		redirectStatus = true;
+                    redirectTo = true;
+                }
             	if (!headerCheck && responseLine.equals("")) {
             		headerCheck = true;
             	}
@@ -79,6 +93,19 @@ public class httpClient {
                     responseHeader += responseLine + "\n";
                 } else {
                     responseBody += responseLine + "\n";
+                }
+            	
+            	//Redirect Code
+                if (redirectTo && responseLine.length() > 10 && responseLine.substring(0, 10).equals("Location: ")) {
+                    String redirectLocation = responseLine.substring(10, responseLine.length());
+                    // determine relative/absolute redirect
+                    //if (redirectLocation.length() >= 7 && (redirectLocation.substring(0, 7).equals("http://")) {
+                        url = redirectLocation;
+                    //} 
+                    System.out.println("Redirecting to:" + url );
+                    if(redirectionAttempt <=5)
+                    redirectResponseString = getRequest(url, headers,displayHeader,++redirectionAttempt);
+                    break;
                 }
             }
 			
@@ -91,10 +118,13 @@ public class httpClient {
            // System.out.println(responseString);
             
 			}catch(Exception e) {
+				e.printStackTrace();
 				System.out.println("ERROR in command");
 		}
-		
-		return responseString;
+		if(!redirectResponseString.equals(""))
+			return redirectResponseString;
+		else
+			return responseString;
 	}
 
 	public String postRequest(String url, ArrayList<String> headers, Boolean displayHeader ,String data) {
@@ -116,8 +146,8 @@ public class httpClient {
             }
         }
 		
-		System.out.println("host "+host);
-		System.out.println("path "+path);
+		//System.out.println("host "+host);
+		//System.out.println("path "+path);
 		
 		//Connection TCP
 		Socket socket = new Socket(InetAddress.getByName(host), PORT);
@@ -145,14 +175,14 @@ public class httpClient {
         }
         
         bw.write("\r\n");
-        System.out.println("Data"+data);
+        //System.out.println("Data"+data);
         bw.write(data);
         
         bw.flush();
         
         //Response
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    	System.out.println("Response");
+    	//System.out.println("Response");
 
         String responseLine;
         String responseHeader = "";
@@ -189,7 +219,6 @@ public class httpClient {
 		
 		String response ="";
 		String url ="";
-		String httpVersion = "HTTP/1.0";
 		ArrayList<String> headers = new ArrayList<String>();
 		String method = args[0].equals("get") ? "GET" : "POST";
 		int argLength = args.length;
@@ -300,9 +329,9 @@ public class httpClient {
 			}
 		
 		if(method == "GET") {
-			System.out.println("url"+url);
-			System.out.println("headers"+headers);
-			response = getRequest(url, headers,displayHeader);
+			//System.out.println("url"+url);
+			//System.out.println("headers"+headers);
+			response = getRequest(url, headers,displayHeader,1);
 		}
 		else
 			response = postRequest(url,headers,displayHeader,data);
@@ -350,11 +379,11 @@ public class httpClient {
 		String[] dataArray = data.split(",");
 		
 		for(String d : dataArray) {
-			System.out.println(d);
+			//System.out.println(d);
 			String[] dataKeyValue = d.split(":");
 			
-			System.out.println(dataKeyValue[0]);
-			System.out.println(dataKeyValue[1]);
+			//System.out.println(dataKeyValue[0]);
+			//System.out.println(dataKeyValue[1]);
 			Boolean numeric = true;
 			try {
 	           Double.parseDouble(dataKeyValue[1]);
@@ -369,7 +398,7 @@ public class httpClient {
 
 		}
 		formattedJSON = formattedJSON.substring(0, formattedJSON.length() - 1) +"}";
-		System.out.println(formattedJSON);
+		//System.out.println(formattedJSON);
 		return formattedJSON;
 	}
 	
