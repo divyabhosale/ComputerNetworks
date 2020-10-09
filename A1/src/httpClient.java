@@ -48,8 +48,7 @@ public class httpClient {
 			
 			if(path.equals(""))
 				path="/";
-			//System.out.println("host "+host);
-			//System.out.println("path "+path);
+			
 			//Connection TCP
 			Socket socket = new Socket(InetAddress.getByName(host), PORT);
 			
@@ -72,7 +71,6 @@ public class httpClient {
             
             //Response
             br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        	//System.out.println("Response");
 
             String responseLine;
             String responseHeader = "";
@@ -81,7 +79,6 @@ public class httpClient {
             Boolean redirectStatus = false;
             boolean headerCheck = false;
             while ((responseLine = br.readLine()) != null) {
-            	//System.out.println(responseLine);
             	if (!redirectStatus && responseLine.contains(status301)) {
             		redirectStatus = true;
                     redirectTo = true;
@@ -106,18 +103,16 @@ public class httpClient {
                 }
             }
 			
-            
-            //Display Result
-            
+                        
             if(displayHeader)
             	responseString += responseHeader;
             responseString += responseBody;
-           // System.out.println(responseString);
             
 			}catch(Exception e) {
 				e.printStackTrace();
 				System.out.println("ERROR in command");
 		}
+		
 		if(!redirectResponseString.equals(""))
 			return redirectResponseString;
 		else
@@ -142,10 +137,7 @@ public class httpClient {
                 path = url.substring(separator);
             }
         }
-		
-		//System.out.println("host "+host);
-		//System.out.println("path "+path);
-		
+	
 		//Connection TCP
 		Socket socket = new Socket(InetAddress.getByName(host), PORT);
 		
@@ -164,29 +156,24 @@ public class httpClient {
         }
         //Add data
         if (!data.isEmpty()) {
-        	
         	if(data.contains(":") && data.startsWith("{") && data.endsWith("}")) 
         		data = convertToJson(data);
-        	//data = "{\"name\": \"Sam Smith\", \"technology\": \"Python\"}";
         	bw.write("Content-Length: " + data.length() + "\r\n");
         }
         
         bw.write("\r\n");
-        //System.out.println("Data"+data);
         bw.write(data);
         
         bw.flush();
         
         //Response
         br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-    	//System.out.println("Response");
 
         String responseLine;
         String responseHeader = "";
         String responseBody = "";
         boolean headerCheck = false;
         while ((responseLine = br.readLine()) != null) {
-        	//System.out.println(responseLine);
         	if (!headerCheck && responseLine.equals("")) {
         		headerCheck = true;
         	}
@@ -202,7 +189,6 @@ public class httpClient {
         if(displayHeader)
         	responseString += responseHeader;
         responseString += responseBody;
-       // System.out.println(responseString);
         
 		}catch(Exception e) {
 			System.out.println("ERROR in command");
@@ -235,40 +221,40 @@ public class httpClient {
                         writeInFile = true;
                         
                     } else {
-                        System.out.println("-o: missing a output file name");
+                        System.out.println("ERROR : -o: missing a output file name");
                         return "ERROR";
                     }
                     break;
 	            case "-d":
                     if (method.equals("GET")) {
-                        System.out.println("-d: GET does not allow inline data");
+                        System.out.println("ERROR : -d: GET does not allow inline data");
                         return "ERROR";
                     } else {
                         if (dflag) {
-                            System.out.println("-d: duplicate option");
+                            System.out.println("ERROR :-d: duplicate option");
                             return "ERROR";
                         } else if (fflag) {
-                            System.out.println("-d: -d and -f can not be used together");
+                            System.out.println("ERROR: -d: -d and -f are not allowed together");
                             return "ERROR";
                         } else if (argLength > i++ && !args[i].startsWith("http://" ) ) {
                             data = args[i] ;
                             dflag = true;
                         } else {
-                            System.out.println("-d: missing inline data");
+                            System.out.println("ERROR :-d: missing inline data");
                             return "ERROR";
                         }
                     }
                     break;
 	            case "-f":
                     if (method.equals("GET")) {
-                        System.out.println("-f: GET does not allow file data");
+                        System.out.println("ERROR: -f: GET does not allow file data");
                         return "ERROR";
                     } else {
                         if (fflag) {
-                            System.out.println("-f: duplicate option");
+                            System.out.println("ERROR : -f: duplicate option");
                             return "ERROR";
                         } else if (dflag) {
-                            System.out.println("-f: -d and -f can not be used together");
+                            System.out.println("ERROR : -f: -d and -f are not allowed together");
                             return "ERROR";
                         } else if (argLength > i++ && !args[i].startsWith("http://" ) ) {
                             String filename = args[i];
@@ -293,7 +279,7 @@ public class httpClient {
                                 return "ERROR";
                             }
                         } else {
-                            System.out.println("-f: missing file name");
+                            System.out.println("ERROR : -f: missing file name");
                             return "ERROR";
                         }
                     }
@@ -302,7 +288,7 @@ public class httpClient {
                     if (argLength > i++ && args[i].contains(":") && !args[i].startsWith("http://" ) ) {
                         headers.add(args[i]);
                     } else {
-                        System.out.println("-h: missing or incorrect key:value pair(s)");
+                        System.out.println("ERROR : -h: missing or incorrect key:value pair(s)");
                         return "ERROR";
                     }
                     break;
@@ -326,8 +312,7 @@ public class httpClient {
 			}
 		
 		if(method == "GET") {
-			//System.out.println("url"+url);
-			//System.out.println("headers"+headers);
+			
 			response = getRequest(url, headers,displayHeader,1);
 		}
 		else
@@ -376,11 +361,8 @@ public class httpClient {
 		String[] dataArray = data.split(",");
 		
 		for(String d : dataArray) {
-			//System.out.println(d);
 			String[] dataKeyValue = d.split(":");
 			
-			//System.out.println(dataKeyValue[0]);
-			//System.out.println(dataKeyValue[1]);
 			Boolean numeric = true;
 			try {
 	           Double.parseDouble(dataKeyValue[1]);
@@ -395,7 +377,6 @@ public class httpClient {
 
 		}
 		formattedJSON = formattedJSON.substring(0, formattedJSON.length() - 1) +"}";
-		//System.out.println(formattedJSON);
 		return formattedJSON;
 	}
 	
