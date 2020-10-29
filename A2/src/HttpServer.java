@@ -35,7 +35,9 @@ public class HttpServer {
 	
 	void startServer() {
         try {
+        	System.out.println("Starting server...");
             ServerSocket serverSocket = new ServerSocket(portNumber);
+            System.out.println("Server started...");
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 //new handleClientRequest(client, printDebugMessage, directoryPath);
