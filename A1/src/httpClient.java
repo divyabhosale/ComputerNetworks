@@ -41,11 +41,14 @@ public class httpClient {
 	                host = url.substring(7, url.length());
 	            } else {
 	                host = url.substring(7, separator);
+	                if(host.contains("localhost"))
+	                	host ="localhost";
 	                path = url.substring(separator);
 	            }
 	        }
 			
-			
+			System.out.println("host"+host);
+			System.out.println("path"+path);
 			if(path.equals(""))
 				path="/";
 			
@@ -54,6 +57,7 @@ public class httpClient {
 			
 			//Build Request
 			bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"));
+			System.out.println("GET" + " " +path + " " + httpVersion +"\r\n");
             bw.write("GET" + " " +path + " " + httpVersion +"\r\n");
             bw.write("Host: " + host+"\r\n");
             bw.write("User-Agent: " + USER_AGENT +"\r\n");
@@ -68,7 +72,7 @@ public class httpClient {
             
             bw.write("\r\n");
             bw.flush();
-            
+            /*
             //Response
             br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -107,7 +111,7 @@ public class httpClient {
             if(displayHeader)
             	responseString += responseHeader;
             responseString += responseBody;
-            
+            */
 			}catch(Exception e) {
 				e.printStackTrace();
 				System.out.println("ERROR in command");
@@ -191,6 +195,7 @@ public class httpClient {
         responseString += responseBody;
         
 		}catch(Exception e) {
+			e.printStackTrace();
 			System.out.println("ERROR in command");
 	}
 
@@ -299,6 +304,11 @@ public class httpClient {
 	            	 if (url.isEmpty()) {
 	                     if (token.length() > 6 && token.startsWith("http://" )) {
 	                         url = token;
+	                         if(token.contains("localhost")) {
+	                        	 String tempPort = token.substring(token.lastIndexOf(":"),token.length());
+	                        	 PORT = Integer.parseInt(tempPort.substring(1,tempPort.indexOf("/")));
+	                        	 System.out.println("port number :"+PORT);
+	                         }
 	                     } else {
 	                         System.out.println(token + ": invalid command");
 	                         return "ERROR";
@@ -329,6 +339,7 @@ public class httpClient {
 		}
 		
 		}catch(Exception e) {
+			e.printStackTrace();
 			System.out.println("ERROR in command");
 		}
 	 finally {

@@ -39,11 +39,16 @@ public class HttpServer {
             ServerSocket serverSocket = new ServerSocket(portNumber);
             System.out.println("Server started...");
             while (true) {
-                Socket clientSocket = serverSocket.accept();
+                //Socket clientSocket = serverSocket.accept();
                 //new handleClientRequest(client, printDebugMessage, directoryPath);
+                Socket client = serverSocket.accept();
+                System.out.println("New connection from " + client.getRemoteSocketAddress());
+                new ProcessClientRequest(client, printDebug, directory);
+                
+       
             }
         } catch (IOException e) {
-            System.out.println("HttpFileServer.run():  " + e.getMessage());
+            System.out.println("Error starting server  " + e.getMessage());
         }
     }
 }
