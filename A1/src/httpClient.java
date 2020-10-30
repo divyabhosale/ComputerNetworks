@@ -72,7 +72,7 @@ public class httpClient {
             
             bw.write("\r\n");
             bw.flush();
-            /*
+            
             //Response
             br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
@@ -111,7 +111,7 @@ public class httpClient {
             if(displayHeader)
             	responseString += responseHeader;
             responseString += responseBody;
-            */
+            
 			}catch(Exception e) {
 				e.printStackTrace();
 				System.out.println("ERROR in command");
