@@ -129,18 +129,23 @@ public class httpClient {
 		String host ="";
 		String path ="";
 		try {
-		if (url.isEmpty()) {
-            System.out.println("URL is missing");
-            return "ERROR";
-        } else {
-            int separator = url.indexOf("/", 7);
-            if (separator == -1) {
-                host = url.substring(7, url.length());
-            } else {
-                host = url.substring(7, separator);
-                path = url.substring(separator);
-            }
-        }
+			if (url.isEmpty()) {
+	            System.out.println("URL is missing");
+	            return "ERROR";
+	        } else {
+	            int separator = url.indexOf("/", 7);
+	            if (separator == -1) {
+	                host = url.substring(7, url.length());
+	            } else {
+	                host = url.substring(7, separator);
+	                if(host.contains("localhost"))
+	                	host ="localhost";
+	                path = url.substring(separator);
+	            }
+	        }
+			
+			System.out.println("host"+host);
+			System.out.println("path"+path);
 	
 		//Connection TCP
 		Socket socket = new Socket(InetAddress.getByName(host), PORT);
@@ -162,11 +167,18 @@ public class httpClient {
         if (!data.isEmpty()) {
         	if(data.contains(":") && data.startsWith("{") && data.endsWith("}")) 
         		data = convertToJson(data);
-        	bw.write("Content-Length: " + data.length() + "\r\n");
+        	bw.write("Content-Length: " + data.length()+ "\r\n" );
+                	
         }
-        
-        bw.write("\r\n");
-        bw.write(data);
+        if(!host.equals("localhost")) {
+        	bw.write("\r\n");
+        	bw.write(data+"\r\n");
+        }
+        else {
+        	bw.write("\n");
+        	bw.write("Data: "+data+"\r\n");
+        }
+        //System.out.println(data);
         
         bw.flush();
         
