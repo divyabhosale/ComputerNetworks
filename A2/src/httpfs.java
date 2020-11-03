@@ -45,7 +45,7 @@ public class httpfs {
                     break;
                 default:
                     System.out.println(option + ":invalid command");
-                    break;
+                    return;
             }
         }
 

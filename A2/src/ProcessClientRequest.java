@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
@@ -28,6 +29,9 @@ public class ProcessClientRequest implements Runnable{
     private StringBuilder response = new StringBuilder();
     private StringBuilder responseBody = new StringBuilder();
     
+    Writer fileWriter;
+    
+    Boolean errorFlag = false;
     ProcessClientRequest(Socket client, boolean printDebug, String directory) {
         this.client = client;
         this.printDebug = printDebug;
@@ -40,7 +44,7 @@ public class ProcessClientRequest implements Runnable{
 	            if (printDebug) 
 	            	System.out.println("\n**Received Request**\n");
 	            processRequest();
-	           
+	           if(!errorFlag) {
 	            if(listOfFiles) {
 	            	System.out.println("Sending list of all files in current directory");
 	            	sendAllFiles(directory);
@@ -52,7 +56,7 @@ public class ProcessClientRequest implements Runnable{
 	            	System.out.println("filePath"+filePath);
 	            	updateFile(directory,data);
 	            }
-	            
+	           }
 	            generateResponse();
 	            if (printDebug) 
 	            	System.out.println("\n**Sending Response**\n");
@@ -66,7 +70,7 @@ public class ProcessClientRequest implements Runnable{
 	            	System.out.println("\n**Complete**\n");
 	            Thread.sleep(1000);
 	            
-	            
+	           
 	    }catch (Exception e) {
 	    	e.printStackTrace();
 	        System.out.println("ERROR " + e.getMessage());
@@ -80,13 +84,22 @@ public class ProcessClientRequest implements Runnable{
 	            }
 	        }
 	    }
+	    
     }
+    
     
     private void updateFile(String directory, String data) throws Exception {
 		// TODO Auto-generated method stub
         String postFilePath = directory + filePath;
-        
-        Writer fileWriter = new FileWriter(postFilePath, false);
+        try {
+        fileWriter = new FileWriter(postFilePath, false);
+        }catch(FileNotFoundException e) {
+        	File newDirectory = new File(postFilePath.substring(0,postFilePath.lastIndexOf("/")));
+            newDirectory.mkdirs();
+            fileWriter = new FileWriter(postFilePath, false);
+        }
+        System.out.println(fileWriter);
+        System.out.println("data in function "+data);
        
         fileWriter.write(data);
         fileWriter.close();
@@ -139,8 +152,16 @@ public class ProcessClientRequest implements Runnable{
                 }
                 int pathBeginAt = line.indexOf("/");
                 filePath = line.substring(pathBeginAt, line.indexOf(" ", pathBeginAt+1));
+                System.out.println("filePathHere "+filePath);
+                if (filePath.length() > 3 && filePath.contains("/../")) {
+                    statusCode = 403;
+                    responseBody.append("Cannot leave the working directory, access denied.\r\n");
+                    errorFlag = true;
+                    return;
+                }
                 if (filePath.equals("/")) {
                     listOfFiles = true;
+                    System.out.println("listoffiles");
                     return;
                 }else if(filePath.startsWith("/get") || filePath.startsWith("/GET")) {
                 	filePath = filePath.substring(4);
@@ -150,8 +171,8 @@ public class ProcessClientRequest implements Runnable{
                 	
                 }
             }
-            if(line.contains("Data: ")) {
-            	data = line.substring(line.lastIndexOf(" "));
+            if(line.contains("Data:")) {
+            	data = line.substring(line.lastIndexOf(":")+1);
             	return;
             }
         

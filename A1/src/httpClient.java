@@ -176,7 +176,7 @@ public class httpClient {
         }
         else {
         	bw.write("\n");
-        	bw.write("Data: "+data+"\r\n");
+        	bw.write("Data:"+data+"\r\n");
         }
         //System.out.println(data);
         
