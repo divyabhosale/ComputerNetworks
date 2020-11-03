@@ -159,7 +159,7 @@ public class ProcessClientRequest implements Runnable{
                     errorFlag = true;
                     return;
                 }
-                if (filePath.equals("/")) {
+                if (filePath.equals("/") || filePath.equals("/get/")) {
                     listOfFiles = true;
                     System.out.println("listoffiles");
                     return;
@@ -169,7 +169,10 @@ public class ProcessClientRequest implements Runnable{
                 }else if(filePath.startsWith("/post") || filePath.startsWith("/POST")) {
                 	filePath = filePath.substring(5);
                 	
+                }else if(method.equals("GET")) {
+                	return;
                 }
+                	
             }
             if(line.contains("Data:")) {
             	data = line.substring(line.lastIndexOf(":")+1);
