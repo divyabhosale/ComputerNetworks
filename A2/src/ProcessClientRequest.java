@@ -95,8 +95,10 @@ public class ProcessClientRequest implements Runnable{
         fileWriter = new FileWriter(postFilePath, false);
         }catch(FileNotFoundException e) {
         	File newDirectory = new File(postFilePath.substring(0,postFilePath.lastIndexOf("/")));
-            newDirectory.mkdirs();
-            fileWriter = new FileWriter(postFilePath, false);
+            //newDirectory.mkdirs();
+            //fileWriter = new FileWriter(postFilePath, false);
+        	statusCode = 403;
+            responseBody.append("Cannot access subdirectories, access denied.\r\n");
         }
         System.out.println(fileWriter);
         System.out.println("data in function "+data);
