@@ -10,8 +10,10 @@ import java.io.Writer;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
+import java.util.HashMap;
 
 public class ProcessClientRequest implements Runnable{
+	private static HashMap<String, Locker> locksMap = new HashMap<>();
 	private boolean printDebug;
     private Socket client;
     private String directory;
@@ -70,6 +72,22 @@ public class ProcessClientRequest implements Runnable{
 	            	System.out.println("\n**Complete**\n");
 	            Thread.sleep(1000);
 	            
+	            if (!listOfFiles && !errorFlag) {
+	                if (method.equals("GET")) {
+	                    Locker lock = locksMap.get(filePath);
+	                    if(lock!= null) {
+		                    if (lock.getReads() == 1) {
+		                        locksMap.remove(filePath);
+		                        if (printDebug) System.out.println("Lock released:        " + filePath);
+		                    } else {
+		                        lock.removeReads();
+		                    }
+	                    }
+	                } else if (method.equals("POST") && statusCode == 200) {
+	                    locksMap.remove(filePath);
+	                    if (printDebug) System.out.println("Lock released:        " + filePath);
+	                }
+	            }
 	           
 	    }catch (Exception e) {
 	    	e.printStackTrace();
@@ -90,6 +108,15 @@ public class ProcessClientRequest implements Runnable{
     
     private void updateFile(String directory, String data) throws Exception {
 		// TODO Auto-generated method stub
+    	if (locksMap.containsKey(filePath)) {
+            statusCode = 403;
+            String readOrWrite = 1 == locksMap.get(filePath).getWrites() ? "written." : "read.";
+            responseBody.append("File ").append(filePath).append(" is being ").append(readOrWrite).append("\r\n");
+            return;
+        } else {
+            Locker lock = new Locker(filePath, "WRITE");
+            locksMap.put(filePath, lock);
+        }
         String postFilePath = directory + filePath;
         try {
         fileWriter = new FileWriter(postFilePath, false);
@@ -114,6 +141,19 @@ public class ProcessClientRequest implements Runnable{
 
 	private void fetchFileDetails(String directory) throws Exception {
 		// TODO Auto-generated method stub
+		 if (locksMap.containsKey(filePath)) {
+             Locker lock = locksMap.get(filePath);
+             if (0 == lock.getWrites()) {
+                 lock.addReads();
+             } else {
+                 statusCode = 403;
+                 responseBody.append("File ").append(filePath).append(" is being written").append("\r\n");
+                 return;
+             }
+         } else {
+             Locker lock = new Locker(filePath, "READ");
+             locksMap.put(filePath, lock);
+         }
     	 File getFile = new File(directory + filePath);
     	 System.out.println(getFile);
          String fileType = getFile.toURI().toURL().openConnection().getContentType();
