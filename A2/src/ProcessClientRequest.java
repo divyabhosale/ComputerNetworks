@@ -93,18 +93,20 @@ public class ProcessClientRequest implements Runnable{
         String postFilePath = directory + filePath;
         try {
         fileWriter = new FileWriter(postFilePath, false);
+        System.out.println(fileWriter);
+        System.out.println("data in function "+data);
+       
+        fileWriter.write(data);
+        fileWriter.close();
         }catch(FileNotFoundException e) {
         	File newDirectory = new File(postFilePath.substring(0,postFilePath.lastIndexOf("/")));
             //newDirectory.mkdirs();
             //fileWriter = new FileWriter(postFilePath, false);
         	statusCode = 403;
             responseBody.append("Cannot access subdirectories, access denied.\r\n");
+            
         }
-        System.out.println(fileWriter);
-        System.out.println("data in function "+data);
        
-        fileWriter.write(data);
-        fileWriter.close();
 
 		
 	}
@@ -144,7 +146,7 @@ public class ProcessClientRequest implements Runnable{
         br = new BufferedReader(new InputStreamReader(client.getInputStream()));
         while ((line = br.readLine()) != null) {
             if (printDebug) 
-            	System.out.println(line);
+            	System.out.println("Line "+line);
             
             if (method.isEmpty()) {
                 if (line.substring(0, 3).equalsIgnoreCase("GET")) {
@@ -155,17 +157,27 @@ public class ProcessClientRequest implements Runnable{
                 int pathBeginAt = line.indexOf("/");
                 filePath = line.substring(pathBeginAt, line.indexOf(" ", pathBeginAt+1));
                 System.out.println("filePathHere "+filePath);
-                if (filePath.length() > 3 && filePath.contains("/../")) {
+              
+                if ((filePath.length() > 3 && filePath.contains("/../"))|| filePath.chars().filter(ch -> ch == '/').count() >= 3) {
                     statusCode = 403;
                     responseBody.append("Cannot leave the working directory, access denied.\r\n");
                     errorFlag = true;
                     return;
                 }
-                if (filePath.equals("/") || filePath.equals("/get/")) {
+                if(filePath.chars().filter(ch -> ch == '/').count() == 2 ) {
+                	if(!(filePath.startsWith("/GET") || filePath.startsWith("/POST") || filePath.startsWith("/get") || filePath.startsWith("/post"))) {
+                		  statusCode = 403;
+                          responseBody.append("Cannot leave the working directory, access denied.\r\n");
+                          errorFlag = true;
+                          return;
+                	}
+                }
+                if (filePath.equals("/") || filePath.equals("/get/") || filePath.equals("/GET/")) {
                     listOfFiles = true;
                     System.out.println("listoffiles");
                     return;
                 }else if(filePath.startsWith("/get") || filePath.startsWith("/GET")) {
+                	
                 	filePath = filePath.substring(4);
                 	return;
                 }else if(filePath.startsWith("/post") || filePath.startsWith("/POST")) {
