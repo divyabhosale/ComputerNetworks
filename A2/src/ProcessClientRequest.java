@@ -34,6 +34,8 @@ public class ProcessClientRequest implements Runnable{
     Writer fileWriter;
     
     Boolean errorFlag = false;
+    Boolean overwrite = true;
+    
     ProcessClientRequest(Socket client, boolean printDebug, String directory) {
         this.client = client;
         this.printDebug = printDebug;
@@ -119,13 +121,17 @@ public class ProcessClientRequest implements Runnable{
         }
         String postFilePath = directory + filePath;
         try {
-        fileWriter = new FileWriter(postFilePath, false);
+        if(overwrite)
+        	fileWriter = new FileWriter(postFilePath, false);
+        else
+        	fileWriter = new FileWriter(postFilePath, true);
         System.out.println(fileWriter);
         System.out.println("data in function "+data);
        
         fileWriter.write(data);
         fileWriter.close();
         }catch(FileNotFoundException e) {
+        	e.printStackTrace();
         	File newDirectory = new File(postFilePath.substring(0,postFilePath.lastIndexOf("/")));
             //newDirectory.mkdirs();
             //fileWriter = new FileWriter(postFilePath, false);
@@ -197,7 +203,14 @@ public class ProcessClientRequest implements Runnable{
                 int pathBeginAt = line.indexOf("/");
                 filePath = line.substring(pathBeginAt, line.indexOf(" ", pathBeginAt+1));
                 System.out.println("filePathHere "+filePath);
-              
+                
+                if(filePath.contains("?overwrite=false")) {
+                	overwrite = false;
+                	filePath = filePath.substring(0,filePath.indexOf("?overwrite"));
+                }else if (filePath.contains("?overwrite=true")) {
+                	filePath = filePath.substring(0,filePath.indexOf("?overwrite"));
+                }
+                	  
                 if ((filePath.length() > 3 && filePath.contains("/../"))|| filePath.chars().filter(ch -> ch == '/').count() >= 3) {
                     statusCode = 403;
                     responseBody.append("Cannot leave the working directory, access denied.\r\n");
