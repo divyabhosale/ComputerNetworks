@@ -127,7 +127,15 @@ public class ProcessClientRequest implements Runnable{
         	fileWriter = new FileWriter(postFilePath, true);
         //System.out.println(fileWriter);
         //System.out.println("data in function "+data);
-       
+        File getFile = new File(postFilePath);
+   	 	System.out.println(getFile);
+        String fileType = getFile.toURI().toURL().openConnection().getContentType();
+        contentType = fileType;
+        if (contentType.equals("text/plain")) {
+            contentDisposition = "inline";
+        } else {
+            contentDisposition = "attachment; filename=" + directory + filePath + ";";
+        }
         fileWriter.write(data);
         fileWriter.close();
         }catch(FileNotFoundException e) {
