@@ -64,7 +64,7 @@ public class ProcessClientRequest implements Runnable{
 	            generateResponse();
 	            if (printDebug) 
 	            	System.out.println("\n**Sending Response**\n");
-	            System.out.println("Sent Response"+response);
+	            System.out.println("Sent Response\n"+response);
 	            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(client.getOutputStream(), StandardCharsets.UTF_8));
 	            bw.write(response.toString());
 	            bw.flush();
@@ -80,14 +80,14 @@ public class ProcessClientRequest implements Runnable{
 	                    if(lock!= null) {
 		                    if (lock.getReads() == 1) {
 		                        locksMap.remove(filePath);
-		                        if (printDebug) System.out.println("Lock released:        " + filePath);
+		                       // if (printDebug) System.out.println("Lock released:        " + filePath);
 		                    } else {
 		                        lock.removeReads();
 		                    }
 	                    }
 	                } else if (method.equals("POST") && statusCode == 200) {
 	                    locksMap.remove(filePath);
-	                    if (printDebug) System.out.println("Lock released:        " + filePath);
+	                    //if (printDebug) System.out.println("Lock released:        " + filePath);
 	                }
 	            }
 	           
@@ -125,8 +125,8 @@ public class ProcessClientRequest implements Runnable{
         	fileWriter = new FileWriter(postFilePath, false);
         else
         	fileWriter = new FileWriter(postFilePath, true);
-        System.out.println(fileWriter);
-        System.out.println("data in function "+data);
+        //System.out.println(fileWriter);
+        //System.out.println("data in function "+data);
        
         fileWriter.write(data);
         fileWriter.close();
@@ -191,8 +191,8 @@ public class ProcessClientRequest implements Runnable{
         String line;
         br = new BufferedReader(new InputStreamReader(client.getInputStream()));
         while ((line = br.readLine()) != null) {
-            if (printDebug) 
-            	System.out.println("Line "+line);
+            //if (printDebug) 
+            	//System.out.println("Line "+line);
             
             if (method.isEmpty()) {
                 if (line.substring(0, 3).equalsIgnoreCase("GET")) {
@@ -202,7 +202,7 @@ public class ProcessClientRequest implements Runnable{
                 }
                 int pathBeginAt = line.indexOf("/");
                 filePath = line.substring(pathBeginAt, line.indexOf(" ", pathBeginAt+1));
-                System.out.println("filePathHere "+filePath);
+                //System.out.println("filePathHere "+filePath);
                 
                 if(filePath.contains("?overwrite=false")) {
                 	overwrite = false;
@@ -227,7 +227,7 @@ public class ProcessClientRequest implements Runnable{
                 }
                 if (filePath.equals("/") || filePath.equals("/get/") || filePath.equals("/GET/")) {
                     listOfFiles = true;
-                    System.out.println("listoffiles");
+                    //System.out.println("listoffiles");
                     return;
                 }else if(filePath.startsWith("/get") || filePath.startsWith("/GET")) {
                 	
@@ -247,7 +247,7 @@ public class ProcessClientRequest implements Runnable{
             }
         
         }
-        System.out.println("Done");
+        //System.out.println("Done");
         
     }
     
@@ -278,12 +278,13 @@ public class ProcessClientRequest implements Runnable{
             Thread.sleep(1000);
             response.append("HTTP/1.1 200 OK\r\n");
             if (method.equals("POST"))
-            responseBody.append("Post file successfully.");
+            responseBody.append("File post successful");
         }
         response.append("Connection: close\r\n");
         response.append("Server: httpfs\n");
         response.append("Date: ").append(Calendar.getInstance().getTime().toString()).append("\r\n");
         response.append("Content-Type: ").append(contentType).append("\r\n");
+        response.append("Content-Disposition: ").append(contentDisposition).append("\r\n");
         response.append("Content-Length: ").append(responseBody.length()).append("\r\n");
         response.append("\r\n");
         response.append(responseBody.toString());

@@ -47,8 +47,8 @@ public class httpClient {
 	            }
 	        }
 			
-			System.out.println("host"+host);
-			System.out.println("path"+path);
+			//System.out.println("host"+host);
+			//System.out.println("path"+path);
 			if(path.equals(""))
 				path="/";
 			
@@ -57,7 +57,7 @@ public class httpClient {
 			
 			//Build Request
 			bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"));
-			System.out.println("GET" + " " +path + " " + httpVersion +"\r\n");
+			//System.out.println("GET" + " " +path + " " + httpVersion +"\r\n");
             bw.write("GET" + " " +path + " " + httpVersion +"\r\n");
             bw.write("Host: " + host+"\r\n");
             bw.write("User-Agent: " + USER_AGENT +"\r\n");
@@ -144,8 +144,8 @@ public class httpClient {
 	            }
 	        }
 			
-			System.out.println("host"+host);
-			System.out.println("path"+path);
+			//System.out.println("host"+host);
+			//System.out.println("path"+path);
 	
 		//Connection TCP
 		Socket socket = new Socket(InetAddress.getByName(host), PORT);
@@ -319,7 +319,7 @@ public class httpClient {
 	                         if(token.contains("localhost")) {
 	                        	 String tempPort = token.substring(token.lastIndexOf(":"),token.length());
 	                        	 PORT = Integer.parseInt(tempPort.substring(1,tempPort.indexOf("/")));
-	                        	 System.out.println("port number :"+PORT);
+	                        	 //System.out.println("port number :"+PORT);
 	                         }
 	                     } else {
 	                         System.out.println(token + ": invalid command");
