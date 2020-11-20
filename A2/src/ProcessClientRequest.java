@@ -72,7 +72,7 @@ public class ProcessClientRequest implements Runnable{
 	            bw.close();
 	            if (printDebug) 
 	            	System.out.println("\n**Complete**\n");
-	            Thread.sleep(1000);
+	            Thread.sleep(3000);
 	            
 	            if (!listOfFiles && !errorFlag) {
 	                if (method.equals("GET")) {
@@ -181,9 +181,9 @@ public class ProcessClientRequest implements Runnable{
              System.out.println("Content Type:        " + fileType);
              System.out.println("Content Disposition: " + contentDisposition);
          }
-         if (!contentType.equals("text/plain")) {
-             responseBody.append("File type is ").append(contentType).append(", cannot read byte file.");
-         } else if (getFile.exists() && getFile.isFile()) {
+         //if (!contentType.equals("text/plain")) {
+         //    responseBody.append("File type is ").append(contentType).append(", cannot read file.");
+         if (getFile.exists() && getFile.isFile()) {
              BufferedReader getFileContents = new BufferedReader(new FileReader(getFile));
              String getLine;
              while (null != (getLine = getFileContents.readLine())) {
@@ -276,8 +276,7 @@ public class ProcessClientRequest implements Runnable{
     private void generateResponse() throws Exception {
         if (statusCode == 404) {
             response.append("HTTP/1.1 404 NOT FOUND\r\n");
-            responseBody.append("The requested URL was not found on the server.\r\n");
-            responseBody.append("If you entered the URL manually, please check you spelling and try again.\r\n");
+            responseBody.append("File not found on the server.\r\n");
         } else if (statusCode == 403) {
             response.append("HTTP/1.1 403 Forbidden\r\n");
         } else if (statusCode == 400) {
