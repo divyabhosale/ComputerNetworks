@@ -1,6 +1,3 @@
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
 
 public class HttpServer {
 	 private int portNumber;
@@ -8,7 +5,7 @@ public class HttpServer {
 	 private String directory;
 	 
 	public HttpServer() {
-		portNumber = 8080;
+		portNumber = 8007;
 		printDebug = false;
         directory = ".";
     }
@@ -34,21 +31,21 @@ public class HttpServer {
 	}
 	
 	void startServer() {
-        try {
+        
         	System.out.println("Starting server...");
-            ServerSocket serverSocket = new ServerSocket(portNumber);
+            MyServerSocket serverSocket = new MyServerSocket(portNumber);
             System.out.println("Server started...");
             while (true) {
                 //Socket clientSocket = serverSocket.accept();
                 //new handleClientRequest(client, printDebugMessage, directoryPath);
-                Socket client = serverSocket.accept();
-                System.out.println("New connection from " + client.getRemoteSocketAddress());
-                new ProcessClientRequest(client, printDebug, directory);
+                //Socket client = serverSocket.accept();
+                //System.out.println("New connection from " + client.getRemoteSocketAddress());
+                //new ProcessClientRequest(client, printDebug, directory);
+            	MyServerSocket newServerSocket = serverSocket.accept();
+                new ProcessClientRequest(newServerSocket, printDebug, directory);
                 
        
             }
-        } catch (IOException e) {
-            System.out.println("Error starting server  " + e.getMessage());
-        }
+       
     }
 }

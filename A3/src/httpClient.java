@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ public class httpClient {
 	boolean fflag = false;
 	BufferedReader brFile = null;
 	String data ="";
-	int PORT = 80;
+	int PORT = 8007;
     String USER_AGENT = "Concordia-HTTP/1.0";
     String httpVersion = "HTTP/1.0";
 	
@@ -53,28 +54,32 @@ public class httpClient {
 				path="/";
 			
 			//Connection TCP
-			Socket socket = new Socket(InetAddress.getByName(host), PORT);
-			
-			//Build Request
-			bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"));
-			//System.out.println("GET" + " " +path + " " + httpVersion +"\r\n");
-            bw.write("GET" + " " +path + " " + httpVersion +"\r\n");
-            bw.write("Host: " + host+"\r\n");
-            bw.write("User-Agent: " + USER_AGENT +"\r\n");
-            if (fflag)
-                bw.write("Content-Type: multipart/form-data; boundary=" + "***" + "\r\n");
-            //Attach headers
+			//Socket socket = new Socket(InetAddress.getByName(host), PORT);
+			ClientSocket clientSocket = new ClientSocket(3000, PORT);
+
+			// Prepare request
+            String request = "";
+            request += "GET" + " " +path + " " + httpVersion +"\r\n";
+            request += "Host: " + host+"\r\n";
+            request += "User-Agent: " + USER_AGENT +"\r\n";
+            if (fflag) {
+                request += "Content-Type: multipart/form-data; boundary=" + "***" + "\r\n";
+            }
+            // Attach headers
             if (!headers.isEmpty()) {
                 for (String header : headers) {
-                    bw.write(header + "\r\n");
+                    request += header + "\r\n";
                 }
             }
-            
-            bw.write("\r\n");
-            bw.flush();
-            
-            //Response
-            br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            if (!data.isEmpty()) {
+                request += "Content-Length: " + data.length() + "\r\n";
+            }
+            request += "\r\n";
+            request += data;
+            clientSocket.send(request);
+
+			//Response
+            br = new BufferedReader(new StringReader(clientSocket.receive()));
 
             String responseLine;
             String responseHeader = "";
@@ -148,42 +153,41 @@ public class httpClient {
 			//System.out.println("path"+path);
 	
 		//Connection TCP
-		Socket socket = new Socket(InetAddress.getByName(host), PORT);
-		
-		//Build Request
-		bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF8"));
-        bw.write("POST" + " " + path + " " + httpVersion +"\r\n");
-        bw.write("Host: " + host+"\r\n");
-        bw.write("User-Agent: " + USER_AGENT +"\r\n");
-        if (fflag)
-            bw.write("Content-Type: multipart/form-data; boundary=" + "***" + "\r\n");
-        //Attach headers
-        if (!headers.isEmpty()) {
-            for (String header : headers) {
-                bw.write(header + "\r\n");
+		//Socket socket = new Socket(InetAddress.getByName(host), PORT);
+			ClientSocket clientSocket = new ClientSocket(3000, PORT);
+
+			// Prepare request
+            String request = "";
+            request += "POST" + " " +path + " " + httpVersion +"\r\n";
+            request += "Host: " + host+"\r\n";
+            request += "User-Agent: " + USER_AGENT +"\r\n";
+            if (fflag) {
+                request += "Content-Type: multipart/form-data; boundary=" + "***" + "\r\n";
             }
-        }
-        //Add data
-        if (!data.isEmpty()) {
-        	if(data.contains(":") && data.startsWith("{") && data.endsWith("}")) 
-        		data = convertToJson(data);
-        	bw.write("Content-Length: " + data.length()+ "\r\n" );
-                	
-        }
-        if(!host.equals("localhost")) {
-        	bw.write("\r\n");
-        	bw.write(data+"\r\n");
-        }
-        else {
-        	bw.write("\n");
-        	bw.write("Data:"+data+"\r\n");
-        }
-        //System.out.println(data);
-        
-        bw.flush();
-        
+            // Attach headers
+            if (!headers.isEmpty()) {
+                for (String header : headers) {
+                    request += header + "\r\n";
+                }
+            }
+            if (!data.isEmpty()) {
+            	if(data.contains(":") && data.startsWith("{") && data.endsWith("}")) 
+            		data = convertToJson(data);
+                request += "Content-Length: " + data.length() + "\r\n";
+            }
+            if(!host.equals("localhost")) {
+            	request += "\r\n";
+            	request += data+"\r\n";
+            }
+            else {
+            	request += "\n";
+            	request += "Data:"+data+"\r\n";
+            	
+            }
+          
+            clientSocket.send(request);
         //Response
-        br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        br = new BufferedReader(new StringReader(clientSocket.receive()));
 
         String responseLine;
         String responseHeader = "";

@@ -1,21 +1,17 @@
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.io.Writer;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.HashMap;
 
 public class ProcessClientRequest implements Runnable{
 	private static HashMap<String, Locker> locksMap = new HashMap<>();
 	private boolean printDebug;
-    private Socket client;
+    private MyServerSocket client;
     private String directory;
     
     private BufferedReader br;
@@ -36,8 +32,8 @@ public class ProcessClientRequest implements Runnable{
     Boolean errorFlag = false;
     Boolean overwrite = true;
     
-    ProcessClientRequest(Socket client, boolean printDebug, String directory) {
-        this.client = client;
+    ProcessClientRequest(MyServerSocket serverSocket, boolean printDebug, String directory) {
+        this.client = serverSocket;
         this.printDebug = printDebug;
         this.directory = directory;
         new Thread(this).start();
@@ -65,11 +61,7 @@ public class ProcessClientRequest implements Runnable{
 	            if (printDebug) 
 	            	System.out.println("\n**Sending Response**\n");
 	            System.out.println("Sent Response\n"+response);
-	            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(client.getOutputStream(), StandardCharsets.UTF_8));
-	            bw.write(response.toString());
-	            bw.flush();
-	            br.close();
-	            bw.close();
+	            client.send(response.toString());
 	            if (printDebug) 
 	            	System.out.println("\n**Complete**\n");
 	            Thread.sleep(3000);
@@ -197,7 +189,7 @@ public class ProcessClientRequest implements Runnable{
 
 	private void processRequest() throws Exception {
         String line;
-        br = new BufferedReader(new InputStreamReader(client.getInputStream()));
+        br = new BufferedReader(new StringReader(client.receive()));
         while ((line = br.readLine()) != null) {
             //if (printDebug) 
             	//System.out.println("Line "+line);
