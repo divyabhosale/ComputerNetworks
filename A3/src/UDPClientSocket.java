@@ -10,18 +10,18 @@ import java.util.Set;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class ClientSocket {
+public class UDPClientSocket {
 
     private SocketAddress routerAddress;
     private InetSocketAddress serverAddress;
     private DatagramChannel channel;
-    private final long totalSequenceNumber = 4294967295L;
-    private long randomSendSeqNum;
+    private final long totalSequenceNumber = 12121212L;
+    private long ranSenderSequence;
     private long receiveSeqNum;
     private int serverPortNumber;
     private boolean debug;
     
-    ClientSocket(int routerPortNumber, int serverPortNumber) {
+    UDPClientSocket(int routerPortNumber, int serverPortNumber) {
         this.serverPortNumber = serverPortNumber;
         this.routerAddress = new InetSocketAddress("localhost", routerPortNumber);
         this.serverAddress = new InetSocketAddress("localhost", serverPortNumber);
@@ -30,32 +30,17 @@ public class ClientSocket {
     }
     
     
-    void send(String data) {
-        try {
-            channel = DatagramChannel.open();
-        } catch (IOException exception) {
-            if (debug) System.out.println("client socket exception " + exception.getMessage());
-        }
-        handShake();
-        selectiveRepeat(data);
-    }
-
+    
     private void handShake() {
         if (debug) System.out.println("\nConnecting to " + serverPortNumber +"-Handshake");
         int handShakeStep = 1;
-        boolean connected = false;
-        while (!connected) {
+        boolean isconnected = false;
+        while (!isconnected) {
             try {
                 switch (handShakeStep) {
                     case 1:
-                        randomSendSeqNum = (long) (Math.random() * totalSequenceNumber);
-                        Packet p1 = new Packet.Builder()
-                                .setType(1)
-                                .setSequenceNumber(randomSendSeqNum)
-                                .setPortNumber(serverPortNumber)
-                                .setPeerAddress(serverAddress.getAddress())
-                                .setPayload("SYN".getBytes())
-                                .create();
+                        ranSenderSequence = (long) (Math.random() * totalSequenceNumber);
+                        Packet p1 = new Packet.Builder().setType(1).setSequenceNumber(ranSenderSequence).setPortNumber(serverPortNumber).setPeerAddress(serverAddress.getAddress()).setPayload("SYN".getBytes()).create();
                         channel.send(p1.toBuffer(), routerAddress);
                         if (debug) System.out.println("Sending to " + serverPortNumber + ": " + p1);
 
@@ -74,7 +59,7 @@ public class ClientSocket {
                             buf.flip();
                             Packet resp = Packet.fromBuffer(buf);
                             if (debug) System.out.println("    Received From: " + resp.getPeerPort() + ": " + resp);
-                            if (2 == resp.getType() && randomSendSeqNum == resp.getSequenceNumber()) {
+                            if (resp.getType() == 2 && ranSenderSequence == resp.getSequenceNumber()) {
                                 String payLoad = new String(resp.getPayload(), UTF_8);
                                 serverPortNumber = new Integer(payLoad.substring(8));
                                 this.serverAddress = new InetSocketAddress("localhost", serverPortNumber);
@@ -86,16 +71,10 @@ public class ClientSocket {
                 			}
                         break;
                     case 3:
-                        Packet p2 = new Packet.Builder()
-                                .setType(3)
-                                .setSequenceNumber(randomSendSeqNum)
-                                .setPortNumber(serverPortNumber)
-                                .setPeerAddress(serverAddress.getAddress())
-                                .setPayload("ACK".getBytes())
-                                .create();
+                        Packet p2 = new Packet.Builder().setType(3).setSequenceNumber(ranSenderSequence).setPortNumber(serverPortNumber).setPeerAddress(serverAddress.getAddress()).setPayload("ACK".getBytes()).create();
                         channel.send(p2.toBuffer(), routerAddress);
                         if (debug) System.out.println("Sending to " + serverPortNumber + ": " + p2);
-                        connected = true;
+                        isconnected = true;
                         break;
                 }
             } catch (IOException exception) {
@@ -104,14 +83,24 @@ public class ClientSocket {
         }
     }
 
-    private void selectiveRepeat(String data) {
+    private void selectiveRepeatProtocol(String data) {
         if (debug) System.out.println("\nSelective Repeat\n To server port :" + serverPortNumber);
-        SelectiveRepeatSender selectiveRepeatSender = new SelectiveRepeatSender(channel, serverAddress, routerAddress);
-        receiveSeqNum = selectiveRepeatSender.send(data, randomSendSeqNum, totalSequenceNumber);
+        SelectiveRepeat selectiveRepeatSender = new SelectiveRepeat(channel, serverAddress, routerAddress);
+        receiveSeqNum = selectiveRepeatSender.send(data, ranSenderSequence, totalSequenceNumber);
+    }
+    
+    public void sendData(String data) {
+        try {
+            channel = DatagramChannel.open();
+        } catch (IOException exception) {
+            if (debug) System.out.println("client socket exception " + exception.getMessage());
+        }
+        handShake();
+        selectiveRepeatProtocol(data);
     }
 
-    String receive() {
-        SelectiveRepeatReceiver selectiveRepeatReceiver = new SelectiveRepeatReceiver(channel, serverAddress.getAddress(), serverPortNumber, routerAddress);
+    public String receiveData() {
+        SelectiveRepeat selectiveRepeatReceiver = new SelectiveRepeat(channel, serverAddress.getAddress(), serverPortNumber, routerAddress);
         selectiveRepeatReceiver.receive(receiveSeqNum, totalSequenceNumber, serverPortNumber);
         return selectiveRepeatReceiver.getData();
     }

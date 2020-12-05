@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.DatagramChannel;
 
-class MyServerSocket {
+class UDPServerSocket {
     private long totalSequenceNumber;
     private DatagramChannel channel;
     private int serverPort;
@@ -18,9 +18,8 @@ class MyServerSocket {
     private long sendSeqNum;
     private boolean debugMessage;
 
-    MyServerSocket(int serverRootPort) {
-        totalSequenceNumber = 4294967295L;
-//        totalSequenceNumber = 8;
+    UDPServerSocket(int serverRootPort) {
+        totalSequenceNumber = 12121212L;
         serverPort = serverRootPort;
         routerAddress = new InetSocketAddress("localhost", 3000);
         debugMessage = true;
@@ -33,13 +32,13 @@ class MyServerSocket {
         }
     }
 
-    MyServerSocket accept() {
+    UDPServerSocket accept() {
         if (debugMessage) System.out.println("\nServer is accepting");
         try {
             ByteBuffer buf = ByteBuffer
                     .allocate(Packet.MAX_LEN)
                     .order(ByteOrder.BIG_ENDIAN);
-            for (; ; ) {
+            while(true) {
                 buf.clear();
                 SocketAddress router = channel.receive(buf);
 
@@ -58,7 +57,7 @@ class MyServerSocket {
                             .create();
                     channel.send(resp.toBuffer(), router);
                     if (debugMessage) System.out.println(serverPort + " has sent    : " + resp);
-                    MyServerSocket newServerSocket =  new MyServerSocket(++serverPort);
+                    UDPServerSocket newServerSocket =  new UDPServerSocket(++serverPort);
                     newServerSocket.setInitialSeqNum(initialSeqNum, router, packet.getPeerAddress(), packet.getPeerPort());
                     return newServerSocket;
                 }
@@ -76,16 +75,16 @@ class MyServerSocket {
         this.clientPort = clientPort;
     }
 
-    String receive() {
+    String receiveData() {
         if (debugMessage) System.out.println("\nReceiving at port number " + serverPort);
-        SelectiveRepeatReceiver selectiveRepeatReceiver = new SelectiveRepeatReceiver(channel, clientAddress, clientPort, router);
+        SelectiveRepeat selectiveRepeatReceiver = new SelectiveRepeat(channel, clientAddress, clientPort, router);
         sendSeqNum = selectiveRepeatReceiver.receive(initialSeqNum, totalSequenceNumber, serverPort);
         System.out.println("receive: " + selectiveRepeatReceiver.getData());
         return selectiveRepeatReceiver.getData();
     }
 
-    void send(String data) {
-        SelectiveRepeatSender selectiveRepeatSender = new SelectiveRepeatSender(channel, new InetSocketAddress("localhost", clientPort), routerAddress);
+    void sendData(String data) {
+        SelectiveRepeat selectiveRepeatSender = new SelectiveRepeat(channel, new InetSocketAddress("localhost", clientPort), routerAddress);
         selectiveRepeatSender.send(data, sendSeqNum, totalSequenceNumber);
     }
 

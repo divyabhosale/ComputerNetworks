@@ -1,7 +1,9 @@
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -10,6 +12,7 @@ import java.util.HashMap;
 import java.util.Set;
 
 import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 class SelectiveRepeat {
     private int maxDataLength;
@@ -22,8 +25,12 @@ class SelectiveRepeat {
     private InetSocketAddress receiverAddress;
     private SocketAddress routerAddress;
     private int serverPort;
+    private StringBuilder data;
 
     private boolean debug;
+	private InetAddress clientAddress;
+	private int clientPort;
+	private boolean inputData;
 
     SelectiveRepeat(DatagramChannel channel, InetSocketAddress receiverAddress, SocketAddress routerAddress) {
         this.channel = channel;

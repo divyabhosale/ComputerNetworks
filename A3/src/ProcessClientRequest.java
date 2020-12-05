@@ -11,7 +11,7 @@ import java.util.HashMap;
 public class ProcessClientRequest implements Runnable{
 	private static HashMap<String, Locker> locksMap = new HashMap<>();
 	private boolean printDebug;
-    private MyServerSocket client;
+    private UDPServerSocket client;
     private String directory;
     
     private BufferedReader br;
@@ -32,7 +32,7 @@ public class ProcessClientRequest implements Runnable{
     Boolean errorFlag = false;
     Boolean overwrite = true;
     
-    ProcessClientRequest(MyServerSocket serverSocket, boolean printDebug, String directory) {
+    ProcessClientRequest(UDPServerSocket serverSocket, boolean printDebug, String directory) {
         this.client = serverSocket;
         this.printDebug = printDebug;
         this.directory = directory;
@@ -61,7 +61,7 @@ public class ProcessClientRequest implements Runnable{
 	            if (printDebug) 
 	            	System.out.println("\n**Sending Response**\n");
 	            System.out.println("Sent Response\n"+response);
-	            client.send(response.toString());
+	            client.sendData(response.toString());
 	            if (printDebug) 
 	            	System.out.println("\n**Complete**\n");
 	            Thread.sleep(3000);
@@ -189,7 +189,7 @@ public class ProcessClientRequest implements Runnable{
 
 	private void processRequest() throws Exception {
         String line;
-        br = new BufferedReader(new StringReader(client.receive()));
+        br = new BufferedReader(new StringReader(client.receiveData()));
         while ((line = br.readLine()) != null) {
             //if (printDebug) 
             	//System.out.println("Line "+line);
