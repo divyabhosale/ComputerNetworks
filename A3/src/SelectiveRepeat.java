@@ -293,8 +293,7 @@ class SelectiveRepeat {
                         // buffer it
                         currentWindowPackets.put(seqNum, packet);
                         // send ACK
-                        Packet resp = packet.toBuilder().setType(3).setSequenceNumber(windowBeginSeqNum)
-                                .setPayload("ACK".getBytes()).create();
+                        Packet resp = packet.toBuilder().setType(3).setSequenceNumber(windowBeginSeqNum).setPayload("ACK".getBytes()).create();
                         channel.send(resp.toBuffer(), routerAddress);
                         if (printDebug)
                             System.out.println("    " + serverPort + " sent    : " + resp);
