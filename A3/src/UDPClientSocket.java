@@ -15,34 +15,38 @@ public class UDPClientSocket {
     private SocketAddress routerAddress;
     private InetSocketAddress serverAddress;
     private DatagramChannel channel;
-    private final long totalSequenceNumber = 12121212L;
+    private final long SeqNumber = 12121212L;
     private long ranSenderSequence;
-    private long receiveSeqNum;
+    private long receiverSeqNumber;
     private int serverPortNumber;
-    private boolean debug;
+    private boolean printDebug;
     
-    UDPClientSocket(int routerPortNumber, int serverPortNumber) {
+   
+    UDPClientSocket(int routerPortNumber, int serverPortNumber,boolean printDebug) {
         this.serverPortNumber = serverPortNumber;
         this.routerAddress = new InetSocketAddress("localhost", routerPortNumber);
         this.serverAddress = new InetSocketAddress("localhost", serverPortNumber);
-
-        debug = true;
+        this.printDebug = printDebug;
+        try {
+        	channel = DatagramChannel.open();
+        } catch (IOException exception) {
+            System.out.println("client socket exception " + exception.getMessage());
+        }
+        makeHandshake();
     }
     
-    
-    
-    private void handShake() {
-        if (debug) System.out.println("\nConnecting to " + serverPortNumber +"-Handshake");
+    private void makeHandshake() {
+        if (printDebug) System.out.println("\nConnecting to " + serverPortNumber +"-Handshake");
         int handShakeStep = 1;
         boolean isconnected = false;
         while (!isconnected) {
             try {
                 switch (handShakeStep) {
                     case 1:
-                        ranSenderSequence = (long) (Math.random() * totalSequenceNumber);
+                        ranSenderSequence = (long) (Math.random() * SeqNumber);
                         Packet p1 = new Packet.Builder().setType(1).setSequenceNumber(ranSenderSequence).setPortNumber(serverPortNumber).setPeerAddress(serverAddress.getAddress()).setPayload("SYN".getBytes()).create();
                         channel.send(p1.toBuffer(), routerAddress);
-                        if (debug) System.out.println("Sending to " + serverPortNumber + ": " + p1);
+                        if (printDebug) System.out.println("Sending to " + serverPortNumber + ": " + p1);
 
                         // Try to receive a packet within timeout.
                         channel.configureBlocking(false);
@@ -52,20 +56,19 @@ public class UDPClientSocket {
 
                         Set<SelectionKey> keys = selector.selectedKeys();
                       if (keys.isEmpty()) {
-                            if (debug) System.out.println("TIME OUT");
+                            if (printDebug) System.out.println("TIME OUT");
                         } else {
                             ByteBuffer buf = ByteBuffer.allocate(Packet.MAX_LEN);
                             channel.receive(buf);
                             buf.flip();
                             Packet resp = Packet.fromBuffer(buf);
-                            if (debug) System.out.println("    Received From: " + resp.getPeerPort() + ": " + resp);
+                            if (printDebug) System.out.println("    Received From: " + resp.getPeerPort() + ": " + resp);
                             if (resp.getType() == 2 && ranSenderSequence == resp.getSequenceNumber()) {
                                 String payLoad = new String(resp.getPayload(), UTF_8);
                                 serverPortNumber = new Integer(payLoad.substring(8));
                                 this.serverAddress = new InetSocketAddress("localhost", serverPortNumber);
                                 handShakeStep = 3;
                             }
-
                             keys.clear();
                             selector.close();
                 			}
@@ -73,7 +76,7 @@ public class UDPClientSocket {
                     case 3:
                         Packet p2 = new Packet.Builder().setType(3).setSequenceNumber(ranSenderSequence).setPortNumber(serverPortNumber).setPeerAddress(serverAddress.getAddress()).setPayload("ACK".getBytes()).create();
                         channel.send(p2.toBuffer(), routerAddress);
-                        if (debug) System.out.println("Sending to " + serverPortNumber + ": " + p2);
+                        if (printDebug) System.out.println("Sending to " + serverPortNumber + ": " + p2);
                         isconnected = true;
                         break;
                 }
@@ -83,26 +86,20 @@ public class UDPClientSocket {
         }
     }
 
-    private void selectiveRepeatProtocol(String data) {
-        if (debug) System.out.println("\nSelective Repeat\n To server port :" + serverPortNumber);
-        SelectiveRepeat selectiveRepeatSender = new SelectiveRepeat(channel, serverAddress, routerAddress);
-        receiveSeqNum = selectiveRepeatSender.send(data, ranSenderSequence, totalSequenceNumber);
-    }
-    
-    public void sendData(String data) {
-        try {
-            channel = DatagramChannel.open();
-        } catch (IOException exception) {
-            if (debug) System.out.println("client socket exception " + exception.getMessage());
-        }
-        handShake();
-        selectiveRepeatProtocol(data);
-    }
 
     public String receiveData() {
         SelectiveRepeat selectiveRepeatReceiver = new SelectiveRepeat(channel, serverAddress.getAddress(), serverPortNumber, routerAddress);
-        selectiveRepeatReceiver.receive(receiveSeqNum, totalSequenceNumber, serverPortNumber);
+        selectiveRepeatReceiver.receiveData(receiverSeqNumber, SeqNumber, serverPortNumber);
         return selectiveRepeatReceiver.getData();
     }
+    
+    public void sendData(String data) {
+        if (printDebug) 
+        	System.out.println("\nSelective Repeat - Sending to server port :" + serverPortNumber);
+        SelectiveRepeat selectiveRepeatSender = new SelectiveRepeat(channel, serverAddress, routerAddress);
+        receiverSeqNumber = selectiveRepeatSender.sendData(data, ranSenderSequence, SeqNumber);
+    }
+
+	
 
 }

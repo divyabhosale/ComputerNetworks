@@ -19,7 +19,7 @@ class SelectiveRepeat {
     private int currentPacket;
     private int endCounter;
     private HashMap<Long, Packet> currentWindowPackets;
-    private boolean done;
+    private boolean completedFlag;
 
     private DatagramChannel channel;
     private InetSocketAddress receiverAddress;
@@ -27,7 +27,7 @@ class SelectiveRepeat {
     private int serverPort;
     private StringBuilder data;
 
-    private boolean debug;
+    private boolean printDebug;
 	private InetAddress clientAddress;
 	private int clientPort;
 	private boolean inputData;
@@ -42,8 +42,8 @@ class SelectiveRepeat {
         currentPacket = 0;
         endCounter = 3;
         currentWindowPackets = new HashMap<>();
-        done = false;
-        debug = true;
+        completedFlag = false;
+        printDebug = true;
     }
 
     SelectiveRepeat(DatagramChannel channel, InetAddress clientAddress, int clientPort, SocketAddress routerAddress) {
@@ -52,10 +52,10 @@ class SelectiveRepeat {
         this.clientPort = clientPort;
         this.routerAddress = routerAddress;
         inputData = false;
-        debug = true;
+        printDebug = true;
     }
 
-    long send(String data, long windowBeginSeqNum, long totalSequenceNumber) {
+    long sendData(String data, long windowBeginSeqNum, long totalSequenceNumber) {
         byte[] byteData = data.getBytes();
         long windowSize = totalSequenceNumber / 2;
         long totalPacket = byteData.length / maxDataLength;
@@ -65,7 +65,7 @@ class SelectiveRepeat {
         while (true) {
             try {
                 // fill / create window size Packets
-                if (!done) {
+                if (!completedFlag) {
                     for (int i = 0; i < windowSize; ++i) {
                         long currentSeqNum = (windowBeginSeqNum + i) % totalSequenceNumber;
                         if (!currentWindowPackets.containsKey(currentSeqNum)) {
@@ -87,7 +87,7 @@ class SelectiveRepeat {
                                     .setPeerAddress(receiverAddress.getAddress()).setPayload(packetData).create();
                             currentWindowPackets.put(currentSeqNum, p);
                             channel.send(currentWindowPackets.get(currentSeqNum).toBuffer(), routerAddress);
-                            if (debug)
+                            if (printDebug)
                                 System.out.println(
                                         "Sent to " + serverPort + ": " + currentWindowPackets.get(currentSeqNum));
                         }
@@ -102,16 +102,16 @@ class SelectiveRepeat {
 
                 Set<SelectionKey> keys = selector.selectedKeys();
                 if (keys.isEmpty()) {
-                    if (debug)
+                    if (printDebug)
                         System.out.println("TIME OUT");
-                    if (done) {
+                    if (completedFlag) {
                         if (--endCounter < 0) {
-                            if (debug)
+                            if (printDebug)
                                 System.out.println("Completed sending data");
                             return ++windowBeginSeqNum;
                         }
                         channel.send(currentWindowPackets.get(windowBeginSeqNum).toBuffer(), routerAddress);
-                        if (debug)
+                        if (printDebug)
                             System.out.println(
                                     "Sent to " + serverPort + ": " + currentWindowPackets.get(windowBeginSeqNum));
                     } else {
@@ -119,7 +119,7 @@ class SelectiveRepeat {
                             long seqNum = windowBeginSeqNum + i;
                             if (currentWindowPackets.containsKey(seqNum)) {
                                 channel.send(currentWindowPackets.get(seqNum).toBuffer(), routerAddress);
-                                if (debug)
+                                if (printDebug)
                                     System.out
                                             .println("Sent to " + serverPort + ": " + currentWindowPackets.get(seqNum));
                             }
@@ -130,25 +130,25 @@ class SelectiveRepeat {
                     channel.receive(buf);
                     buf.flip();
                     Packet resp = Packet.fromBuffer(buf);
-                    if (done) {
+                    if (completedFlag) {
                         if (3 == resp.getType()) {
                             channel.send(currentWindowPackets.get(windowBeginSeqNum).toBuffer(), routerAddress);
-                            if (debug)
+                            if (printDebug)
                                 System.out.println(
                                         "Sent to " + serverPort + ": " + currentWindowPackets.get(windowBeginSeqNum));
                         } else if (5 == resp.getType()) {
-                            if (debug)
+                            if (printDebug)
                                 System.out.println("Completed sending request");
                             return ++windowBeginSeqNum;
                         }
                     } else if (3 == resp.getType()) {
-                        if (debug)
+                        if (printDebug)
                             System.out.println("    Received: " + resp);
                         long missedSeqNum = resp.getSequenceNumber();
                         if (currentWindowPackets.containsKey(missedSeqNum)) {
                             // send missed Packet
                             channel.send(currentWindowPackets.get(missedSeqNum).toBuffer(), routerAddress);
-                            if (debug)
+                            if (printDebug)
                                 System.out.println(
                                         "Sent to " + serverPort + ": " + currentWindowPackets.get(missedSeqNum));
 
@@ -172,10 +172,10 @@ class SelectiveRepeat {
                                         .create();
                                 currentWindowPackets.put(windowBeginSeqNum, p);
                                 channel.send(currentWindowPackets.get(windowBeginSeqNum).toBuffer(), routerAddress);
-                                if (debug)
+                                if (printDebug)
                                     System.out.println("Sent to " + serverPort + ": "
                                             + currentWindowPackets.get(windowBeginSeqNum));
-                                done = true;
+                                completedFlag = true;
                             }
                         }
                     }
@@ -188,7 +188,7 @@ class SelectiveRepeat {
         }
     }
 
-    long receive(long windowBeginSeqNum, long totalSequenceNumber, int serverPort) {
+    long receiveData(long windowBeginSeqNum, long totalSequenceNumber, int serverPort) {
         long windowSize = totalSequenceNumber / 2;
         data = new StringBuilder();
 
@@ -197,7 +197,7 @@ class SelectiveRepeat {
         ByteBuffer buf = ByteBuffer.allocate(Packet.MAX_LEN).order(ByteOrder.BIG_ENDIAN);
         try {
             channel.configureBlocking(false);
-            for (;;) {
+            while(true) {
                 Selector selector = Selector.open();
                 channel.register(selector, OP_READ);
                 selector.select(500);
@@ -205,13 +205,13 @@ class SelectiveRepeat {
 
                 if (keys.isEmpty()) {
                     if (inputData) {
-                        if (debug)
+                        if (printDebug)
                             System.out.println("TIME OUT");
                         Packet resp = new Packet.Builder().setType(3).setSequenceNumber(windowBeginSeqNum)
                                 .setPeerAddress(clientAddress).setPortNumber(clientPort).setPayload("ACK".getBytes())
                                 .create();
                         channel.send(resp.toBuffer(), routerAddress);
-                        if (debug)
+                        if (printDebug)
                             System.out.println("    " + serverPort + " sent    : " + resp);
                     }
                 } else {
@@ -226,18 +226,18 @@ class SelectiveRepeat {
                         Packet resp = packet.toBuilder().setType(5).setSequenceNumber(windowBeginSeqNum)
                                 .setPayload("FIN_ACK".getBytes()).create();
                         channel.send(resp.toBuffer(), routerAddress);
-                        if (debug)
+                        if (printDebug)
                             System.out.println("    " + serverPort + " sent    : " + resp);
                         return ++windowBeginSeqNum;
                     }
                     if (0 != packet.getType())
                         continue;
-                    if (debug)
+                    if (printDebug)
                         System.out.print(serverPort + " received: " + packet);
                     boolean outOfOrderButWithinRange = false;
                     if (windowBeginSeqNum == seqNum) {
                         // in order
-                        if (debug)
+                        if (printDebug)
                             System.out.print(", in order, deliver #" + seqNum);
                         data.append(new String(packet.getPayload(), UTF_8));
                         windowBeginSeqNum = (windowBeginSeqNum + 1) % totalSequenceNumber;
@@ -245,7 +245,7 @@ class SelectiveRepeat {
                         for (long i = 0; i < windowSize - 1; ++i) {
                             long bufferSeqNum = windowBeginSeqNum;
                             if (currentWindowPackets.containsKey(bufferSeqNum)) {
-                                if (debug)
+                                if (printDebug)
                                     System.out.print(", #" + bufferSeqNum);
                                 data.append(new String(currentWindowPackets.get(bufferSeqNum).getPayload(), UTF_8));
                                 windowBeginSeqNum = (windowBeginSeqNum + 1) % totalSequenceNumber;
@@ -254,29 +254,29 @@ class SelectiveRepeat {
                                 break;
                             }
                         }
-                        if (debug)
+                        if (printDebug)
                             System.out.println();
                     } else if (windowBeginSeqNum + windowSize <= totalSequenceNumber) {
                         // out of order
                         if (windowBeginSeqNum < seqNum && seqNum < windowBeginSeqNum + windowSize) {
                             // within window range
-                            if (debug)
+                            if (printDebug)
                                 System.out.print(", out of order, within range");
                             outOfOrderButWithinRange = true;
                         } else {
-                            if (debug)
+                            if (printDebug)
                                 System.out.println(", out of order, out of range, discard it");
                         }
                     } else {
                         // out of order
-                        if (debug)
+                        if (printDebug)
                             System.out.print(", out of order, within range");
                         if (windowBeginSeqNum < seqNum && seqNum < totalSequenceNumber
                                 || 0 <= seqNum && seqNum < (windowSize - (totalSequenceNumber - windowBeginSeqNum))) {
                             // within window range
                             outOfOrderButWithinRange = true;
                         } else {
-                            if (debug)
+                            if (printDebug)
                                 System.out.println(", out of order, out of range, discard it");
                         }
                     }
@@ -284,11 +284,11 @@ class SelectiveRepeat {
                     if (outOfOrderButWithinRange) {
                         // check duplicate
                         if (currentWindowPackets.containsKey(seqNum)) {
-                            if (debug)
+                            if (printDebug)
                                 System.out.println(", duplicate, discard it");
                             continue;
                         }
-                        if (debug)
+                        if (printDebug)
                             System.out.println(", not duplicate, buffer it");
                         // buffer it
                         currentWindowPackets.put(seqNum, packet);
@@ -296,7 +296,7 @@ class SelectiveRepeat {
                         Packet resp = packet.toBuilder().setType(3).setSequenceNumber(windowBeginSeqNum)
                                 .setPayload("ACK".getBytes()).create();
                         channel.send(resp.toBuffer(), routerAddress);
-                        if (debug)
+                        if (printDebug)
                             System.out.println("    " + serverPort + " sent    : " + resp);
                     }
                 }

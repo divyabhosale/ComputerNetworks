@@ -9,6 +9,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.channels.DatagramChannel;
 import java.util.ArrayList;
 public class httpClient {
 	
@@ -55,7 +56,7 @@ public class httpClient {
 			
 			//Connection TCP
 			//Socket socket = new Socket(InetAddress.getByName(host), PORT);
-			UDPClientSocket clientSocket = new UDPClientSocket(3000, PORT);
+			UDPClientSocket clientSocket = new UDPClientSocket(3000, PORT,true);
 
 			// Prepare request
             String request = "";
@@ -76,8 +77,8 @@ public class httpClient {
             }
             request += "\r\n";
             request += data;
+            
             clientSocket.sendData(request);
-
 			//Response
             br = new BufferedReader(new StringReader(clientSocket.receiveData()));
 
@@ -154,7 +155,7 @@ public class httpClient {
 	
 		//Connection TCP
 		//Socket socket = new Socket(InetAddress.getByName(host), PORT);
-			UDPClientSocket clientSocket = new UDPClientSocket(3000, PORT);
+			UDPClientSocket clientSocket = new UDPClientSocket(3000, PORT,true);
 
 			// Prepare request
             String request = "";
@@ -185,8 +186,9 @@ public class httpClient {
             	
             }
           
-            clientSocket.sendData(request);
-        //Response
+          
+            clientSocket.sendData(request);        
+           //Response
         br = new BufferedReader(new StringReader(clientSocket.receiveData()));
 
         String responseLine;

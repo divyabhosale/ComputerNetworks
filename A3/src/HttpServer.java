@@ -33,10 +33,9 @@ public class HttpServer {
 	void startServer() {
         
         	System.out.println("Starting server...");
-            UDPServerSocket serverSocket = new UDPServerSocket(portNumber);
+            UDPServerSocket serverSocket = new UDPServerSocket(portNumber,true);
             System.out.println("Server started...");
             while (true) {
-              
             	UDPServerSocket newServerSocket = serverSocket.accept();
                 new ProcessClientRequest(newServerSocket, printDebug, directory);
                 
