@@ -15,7 +15,7 @@ public class ClientSocket {
     private SocketAddress routerAddress;
     private InetSocketAddress serverAddress;
     private DatagramChannel channel;
-    private final long totalSequenceNumber = 12121212L;
+    private final long totalSequenceNumber = 4294967295L;
     private long randomSendSeqNum;
     private long receiveSeqNum;
     private int serverPortNumber;

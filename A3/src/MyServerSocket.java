@@ -34,7 +34,7 @@ class MyServerSocket {
     }
 
     MyServerSocket accept() {
-        if (debugMessage) System.out.println("\nAccepting");
+        if (debugMessage) System.out.println("\nServer is accepting");
         try {
             ByteBuffer buf = ByteBuffer
                     .allocate(Packet.MAX_LEN)
@@ -86,7 +86,6 @@ class MyServerSocket {
 
     void send(String data) {
         SelectiveRepeatSender selectiveRepeatSender = new SelectiveRepeatSender(channel, new InetSocketAddress("localhost", clientPort), routerAddress);
-        if (debugMessage) System.out.println("begin " + sendSeqNum);
         selectiveRepeatSender.send(data, sendSeqNum, totalSequenceNumber);
     }
 

@@ -28,7 +28,7 @@ class SelectiveRepeatReceiver {
         this.routerAddress = routerAddress;
 
         inputData = false;
-        debugMessage = false;
+        debugMessage = true;
     }
 
     long receive(long windowBeginSeqNum, long totalSequenceNumber, int serverPort) {
@@ -83,7 +83,7 @@ class SelectiveRepeatReceiver {
                     if (0 != packet.getType()) continue;
                     if (debugMessage) System.out.print(serverPort + " received: " + packet);
                     boolean outOfOrderButWithinRange = false;
-                   /* if (windowBeginSeqNum == seqNum) {
+                    if (windowBeginSeqNum == seqNum) {
                         // in order
                         if (debugMessage) System.out.print(", in order, deliver #" + seqNum);
                         data.append(new String(packet.getPayload(), UTF_8));
@@ -120,9 +120,9 @@ class SelectiveRepeatReceiver {
                         } else {
                             if (debugMessage) System.out.println(", out of order, out of range, discard it");
                         }
-                    }*/
+                    }
 
-                   /* if (outOfOrderButWithinRange) {
+                    if (outOfOrderButWithinRange) {
                         // check duplicate
                         if (currentWindowPackets.containsKey(seqNum)) {
                             if (debugMessage) System.out.println(", duplicate, discard it");
@@ -139,7 +139,7 @@ class SelectiveRepeatReceiver {
                                 .create();
                         channel.send(resp.toBuffer(), routerAddress);
                         if (debugMessage) System.out.println("    " + serverPort + " sent    : " + resp);
-                    }*/
+                    }
                 }
 
                 keys.clear();

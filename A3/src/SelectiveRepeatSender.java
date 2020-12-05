@@ -37,7 +37,7 @@ class SelectiveRepeatSender {
         endCounter = 3;
         currentWindowPackets = new HashMap<>();
         done = false;
-        debugMessage = false;
+        debugMessage = true;
     }
 
     long send(String data, long windowBeginSeqNum, long totalSequenceNumber) {
