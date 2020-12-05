@@ -138,7 +138,7 @@ class SelectiveRepeat {
                                         "Sent to " + serverPort + ": " + currentWindowPackets.get(windowBeginSeqNum));
                         } else if (5 == resp.getType()) {
                             if (printDebug)
-                                System.out.println("Completed sending request");
+                                System.out.println("Completed sending data");
                             return ++windowBeginSeqNum;
                         }
                     } else if ( resp.getType() == 3) {
