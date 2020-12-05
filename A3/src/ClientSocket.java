@@ -15,7 +15,7 @@ public class ClientSocket {
     private SocketAddress routerAddress;
     private InetSocketAddress serverAddress;
     private DatagramChannel channel;
-    private final long totalSequenceNumber = 4294967295L;
+    private final long totalSequenceNumber = 12121212L;
     private long randomSendSeqNum;
     private long receiveSeqNum;
     private int serverPortNumber;
@@ -34,14 +34,14 @@ public class ClientSocket {
         try {
             channel = DatagramChannel.open();
         } catch (IOException exception) {
-            if (debug) System.out.println("MyClientSocket.send(): " + exception.getMessage());
+            if (debug) System.out.println("client socket exception " + exception.getMessage());
         }
         handShake();
         selectiveRepeat(data);
     }
 
     private void handShake() {
-        if (debug) System.out.println("\nHand Shaking... Server port " + serverPortNumber);
+        if (debug) System.out.println("\nConnecting to " + serverPortNumber +"-Handshake");
         int handShakeStep = 1;
         boolean connected = false;
         while (!connected) {
@@ -57,20 +57,23 @@ public class ClientSocket {
                                 .setPayload("SYN".getBytes())
                                 .create();
                         channel.send(p1.toBuffer(), routerAddress);
-                        if (debug) System.out.println("Sent to " + serverPortNumber + ": " + p1);
+                        if (debug) System.out.println("Sending to " + serverPortNumber + ": " + p1);
 
                         // Try to receive a packet within timeout.
                         channel.configureBlocking(false);
                         Selector selector = Selector.open();
                         channel.register(selector, OP_READ);
-                        selector.select(5000);
+                        selector.select(5000); // block for up to timeout milliseconds
 
                         Set<SelectionKey> keys = selector.selectedKeys();
+                      if (keys.isEmpty()) {
+                            if (debug) System.out.println("TIME OUT");
+                        } else {
                             ByteBuffer buf = ByteBuffer.allocate(Packet.MAX_LEN);
                             channel.receive(buf);
                             buf.flip();
                             Packet resp = Packet.fromBuffer(buf);
-                            if (debug) System.out.println("    Received: " + resp.getPeerPort() + ": " + resp);
+                            if (debug) System.out.println("    Received From: " + resp.getPeerPort() + ": " + resp);
                             if (2 == resp.getType() && randomSendSeqNum == resp.getSequenceNumber()) {
                                 String payLoad = new String(resp.getPayload(), UTF_8);
                                 serverPortNumber = new Integer(payLoad.substring(8));
@@ -80,7 +83,7 @@ public class ClientSocket {
 
                             keys.clear();
                             selector.close();
-                       
+                			}
                         break;
                     case 3:
                         Packet p2 = new Packet.Builder()
@@ -91,18 +94,18 @@ public class ClientSocket {
                                 .setPayload("ACK".getBytes())
                                 .create();
                         channel.send(p2.toBuffer(), routerAddress);
-                        if (debug) System.out.println("Sent to " + serverPortNumber + ": " + p2);
+                        if (debug) System.out.println("Sending to " + serverPortNumber + ": " + p2);
                         connected = true;
                         break;
                 }
             } catch (IOException exception) {
-                System.out.println("MyClientSocket.handShake(), step " + handShakeStep + " " + exception.getMessage());
+                System.out.println("client socket exception" + handShakeStep + " " + exception.getMessage());
             }
         }
     }
 
     private void selectiveRepeat(String data) {
-        if (debug) System.out.println("\nSelective Repeating... New server port " + serverPortNumber);
+        if (debug) System.out.println("\nSelective Repeat\n To server port :" + serverPortNumber);
         SelectiveRepeatSender selectiveRepeatSender = new SelectiveRepeatSender(channel, serverAddress, routerAddress);
         receiveSeqNum = selectiveRepeatSender.send(data, randomSendSeqNum, totalSequenceNumber);
     }

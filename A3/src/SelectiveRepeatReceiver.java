@@ -70,7 +70,7 @@ class SelectiveRepeatReceiver {
                     Packet packet = Packet.fromBuffer(buf);
                     buf.flip();
                     long seqNum = packet.getSequenceNumber();
-                    if (4 == packet.getType()) {
+                    if (packet.getType()== 4) {
                         Packet resp = packet.toBuilder()
                                 .setType(5)
                                 .setSequenceNumber(windowBeginSeqNum)
@@ -122,7 +122,7 @@ class SelectiveRepeatReceiver {
                         }
                     }
 
-                    if (outOfOrderButWithinRange) {
+                   /* if (outOfOrderButWithinRange) {
                         // check duplicate
                         if (currentWindowPackets.containsKey(seqNum)) {
                             if (debugMessage) System.out.println(", duplicate, discard it");
@@ -139,14 +139,14 @@ class SelectiveRepeatReceiver {
                                 .create();
                         channel.send(resp.toBuffer(), routerAddress);
                         if (debugMessage) System.out.println("    " + serverPort + " sent    : " + resp);
-                    }
+                    }*/
                 }
 
                 keys.clear();
                 selector.close();
             }
         } catch (IOException exception) {
-            System.out.println("MyServerSocket.receive(): " + exception.getMessage());
+            System.out.println("server socket exception " + exception.getMessage());
             return -1;
         }
     }
