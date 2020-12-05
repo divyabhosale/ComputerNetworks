@@ -131,7 +131,7 @@ class SelectiveRepeat {
                     buf.flip();
                     Packet resp = Packet.fromBuffer(buf);
                     if (completedFlag) {
-                        if (3 == resp.getType()) {
+                        if (resp.getType() == 3) {
                             channel.send(currentWindowPackets.get(windowBeginSeqNum).toBuffer(), routerAddress);
                             if (printDebug)
                                 System.out.println(
@@ -141,7 +141,7 @@ class SelectiveRepeat {
                                 System.out.println("Completed sending request");
                             return ++windowBeginSeqNum;
                         }
-                    } else if (3 == resp.getType()) {
+                    } else if ( resp.getType() == 3) {
                         if (printDebug)
                             System.out.println("    Received: " + resp);
                         long missedSeqNum = resp.getSequenceNumber();
