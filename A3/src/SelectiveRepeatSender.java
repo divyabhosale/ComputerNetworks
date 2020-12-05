@@ -91,10 +91,10 @@ class SelectiveRepeatSender {
 
                 Set<SelectionKey> keys = selector.selectedKeys();
                 if (keys.isEmpty()) {
-                    if (debugMessage) System.out.println("Time out");
+                    if (debugMessage) System.out.println("TIME OUT");
                     if (done) {
                         if (--endCounter < 0) {
-                            if (debugMessage) System.out.println("Finish sending data");
+                            if (debugMessage) System.out.println("Completed sending data");
                             return ++windowBeginSeqNum;
                         }
                         channel.send(currentWindowPackets.get(windowBeginSeqNum).toBuffer(), routerAddress);
@@ -118,7 +118,7 @@ class SelectiveRepeatSender {
                             channel.send(currentWindowPackets.get(windowBeginSeqNum).toBuffer(), routerAddress);
                             if (debugMessage) System.out.println("Sent to " + serverPort + ": " + currentWindowPackets.get(windowBeginSeqNum));
                         } else if (5 == resp.getType()) {
-                            if (debugMessage) System.out.println("Finish sending request");
+                            if (debugMessage) System.out.println("Completed sending request");
                             return ++windowBeginSeqNum;
                         }
                     } else if (3 == resp.getType()) {
@@ -160,7 +160,7 @@ class SelectiveRepeatSender {
                 keys.clear();
                 selector.close();
             } catch (IOException exception) {
-                System.out.println("MyClientSocket.selectiveRepeat(): " + exception.getMessage());
+                System.out.println("ClientSocket selectiveRepeat exception: " + exception.getMessage());
             }
         }
     }

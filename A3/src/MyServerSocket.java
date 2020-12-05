@@ -29,12 +29,12 @@ class MyServerSocket {
             channel = DatagramChannel.open();
             channel.bind(new InetSocketAddress(serverRootPort));
         } catch (IOException exception) {
-            System.out.println("MyServerSocket.ctor(): " + exception.getMessage());
+            System.out.println("MyServerSocket exception: " + exception.getMessage());
         }
     }
 
     MyServerSocket accept() {
-        if (debugMessage) System.out.println("\nAccepting...");
+        if (debugMessage) System.out.println("\nAccepting");
         try {
             ByteBuffer buf = ByteBuffer
                     .allocate(Packet.MAX_LEN)
@@ -49,7 +49,7 @@ class MyServerSocket {
                 buf.flip();
 
                 if (1 == packet.getType()) {
-                    if (debugMessage) System.out.println(serverPort + " received: " + packet);
+                    if (debugMessage) System.out.println(serverPort + " has received: " + packet);
                     long initialSeqNum = packet.getSequenceNumber();
                     String payLoad = "SYN-ACK " + (serverPort+1);
                     Packet resp = packet.toBuilder()
@@ -57,14 +57,14 @@ class MyServerSocket {
                             .setPayload(payLoad.getBytes())
                             .create();
                     channel.send(resp.toBuffer(), router);
-                    if (debugMessage) System.out.println(serverPort + " sent    : " + resp);
+                    if (debugMessage) System.out.println(serverPort + " has sent    : " + resp);
                     MyServerSocket newServerSocket =  new MyServerSocket(++serverPort);
                     newServerSocket.setInitialSeqNum(initialSeqNum, router, packet.getPeerAddress(), packet.getPeerPort());
                     return newServerSocket;
                 }
             }
         } catch (IOException exception) {
-            System.out.println("MyServerSocket.accept(): " + exception.getMessage());
+            System.out.println("MyServerSocket receive exception: " + exception.getMessage());
             return null;
         }
     }
@@ -77,7 +77,7 @@ class MyServerSocket {
     }
 
     String receive() {
-        if (debugMessage) System.out.println("\nReceiving at port " + serverPort);
+        if (debugMessage) System.out.println("\nReceiving at port number " + serverPort);
         SelectiveRepeatReceiver selectiveRepeatReceiver = new SelectiveRepeatReceiver(channel, clientAddress, clientPort, router);
         sendSeqNum = selectiveRepeatReceiver.receive(initialSeqNum, totalSequenceNumber, serverPort);
         System.out.println("receive: " + selectiveRepeatReceiver.getData());

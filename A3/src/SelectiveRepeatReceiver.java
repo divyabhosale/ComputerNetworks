@@ -51,7 +51,7 @@ class SelectiveRepeatReceiver {
 
                 if (keys.isEmpty()) {
                     if (inputData) {
-                        if (debugMessage) System.out.println("Time out");
+                        if (debugMessage) System.out.println("TIME OUT");
                         Packet resp = new Packet.Builder()
                                 .setType(3)
                                 .setSequenceNumber(windowBeginSeqNum)
@@ -83,7 +83,7 @@ class SelectiveRepeatReceiver {
                     if (0 != packet.getType()) continue;
                     if (debugMessage) System.out.print(serverPort + " received: " + packet);
                     boolean outOfOrderButWithinRange = false;
-                    if (windowBeginSeqNum == seqNum) {
+                   /* if (windowBeginSeqNum == seqNum) {
                         // in order
                         if (debugMessage) System.out.print(", in order, deliver #" + seqNum);
                         data.append(new String(packet.getPayload(), UTF_8));
@@ -120,7 +120,7 @@ class SelectiveRepeatReceiver {
                         } else {
                             if (debugMessage) System.out.println(", out of order, out of range, discard it");
                         }
-                    }
+                    }*/
 
                    /* if (outOfOrderButWithinRange) {
                         // check duplicate
