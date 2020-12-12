@@ -64,7 +64,6 @@ class SelectiveRepeat {
 
         while (true) {
             try {
-                // fill / create window size Packets
                 if (!completedFlag) {
                     for (int i = 0; i < windowSize; ++i) {
                         long currentSeqNum = (windowBeginSeqNum + i) % totalSequenceNumber;
@@ -78,7 +77,6 @@ class SelectiveRepeat {
                                 packetData = Arrays.copyOfRange(byteData, (currentPacket) * maxDataLength,
                                         byteData.length);
                             } else {
-                                // no more Packets to create
                                 break;
                             }
                             ++currentPacket;
@@ -94,7 +92,6 @@ class SelectiveRepeat {
                     }
                 }
 
-                // Try to receive a packet within timeout.
                 channel.configureBlocking(false);
                 Selector selector = Selector.open();
                 channel.register(selector, OP_READ);
@@ -236,17 +233,13 @@ class SelectiveRepeat {
                         System.out.print(serverPort + " received: " + packet);
                     boolean outOfOrderButWithinRange = false;
                     if (windowBeginSeqNum == seqNum) {
-                        // in order
-                        if (printDebug)
-                            System.out.print(", in order, deliver #" + seqNum);
+                       
                         data.append(new String(packet.getPayload(), UTF_8));
                         windowBeginSeqNum = (windowBeginSeqNum + 1) % totalSequenceNumber;
-                        // check buffer
                         for (long i = 0; i < windowSize - 1; ++i) {
                             long bufferSeqNum = windowBeginSeqNum;
                             if (currentWindowPackets.containsKey(bufferSeqNum)) {
-                                if (printDebug)
-                                    System.out.print(", #" + bufferSeqNum);
+                              
                                 data.append(new String(currentWindowPackets.get(bufferSeqNum).getPayload(), UTF_8));
                                 windowBeginSeqNum = (windowBeginSeqNum + 1) % totalSequenceNumber;
                                 currentWindowPackets.remove(bufferSeqNum);
@@ -257,42 +250,21 @@ class SelectiveRepeat {
                         if (printDebug)
                             System.out.println();
                     } else if (windowBeginSeqNum + windowSize <= totalSequenceNumber) {
-                        // out of order
-                        if (windowBeginSeqNum < seqNum && seqNum < windowBeginSeqNum + windowSize) {
-                            // within window range
-                            if (printDebug)
-                                System.out.print(", out of order, within range");
+                        if (windowBeginSeqNum < seqNum && seqNum < windowBeginSeqNum + windowSize) {                          
                             outOfOrderButWithinRange = true;
-                        } else {
-                            if (printDebug)
-                                System.out.println(", out of order, out of range, discard it");
-                        }
+                        } 
                     } else {
-                        // out of order
-                        if (printDebug)
-                            System.out.print(", out of order, within range");
                         if (windowBeginSeqNum < seqNum && seqNum < totalSequenceNumber
                                 || 0 <= seqNum && seqNum < (windowSize - (totalSequenceNumber - windowBeginSeqNum))) {
-                            // within window range
                             outOfOrderButWithinRange = true;
-                        } else {
-                            if (printDebug)
-                                System.out.println(", out of order, out of range, discard it");
-                        }
+                        } 
                     }
 
                     if (outOfOrderButWithinRange) {
-                        // check duplicate
-                        if (currentWindowPackets.containsKey(seqNum)) {
-                            if (printDebug)
-                                System.out.println(", duplicate, discard it");
+                        if (currentWindowPackets.containsKey(seqNum)) {    
                             continue;
                         }
-                        if (printDebug)
-                            System.out.println(", not duplicate, buffer it");
-                        // buffer it
                         currentWindowPackets.put(seqNum, packet);
-                        // send ACK
                         Packet resp = packet.toBuilder().setType(3).setSequenceNumber(windowBeginSeqNum).setPayload("ACK".getBytes()).create();
                         channel.send(resp.toBuffer(), routerAddress);
                         if (printDebug)

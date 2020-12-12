@@ -47,7 +47,7 @@ class UDPServerSocket {
                 Packet packet = Packet.fromBuffer(buf);
                 buf.flip();
 
-                if (1 == packet.getType()) {
+                if (packet.getType() == 1) {
                     if (printDebug) System.out.println(serverPort + " has received: " + packet);
                     long initialSeqNum = packet.getSequenceNumber();
                     String payLoad = "SYN-ACK " + (serverPort+1);
