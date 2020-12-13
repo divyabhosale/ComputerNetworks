@@ -48,7 +48,7 @@ class UDPServerSocket {
                 buf.flip();
 
                 if (packet.getType() == 1) {
-                    if (printDebug) System.out.println(serverPort + " has received: " + packet);
+                    if (printDebug) System.out.println(serverPort + " has received: " + packet + " type-"+packet.getType());
                     long initialSeqNum = packet.getSequenceNumber();
                     String payLoad = "SYN-ACK " + (serverPort+1);
                     Packet resp = packet.toBuilder()
@@ -56,7 +56,7 @@ class UDPServerSocket {
                             .setPayload(payLoad.getBytes())
                             .create();
                     channel.send(resp.toBuffer(), router);
-                    if (printDebug) System.out.println(serverPort + " has sent    : " + resp);
+                    if (printDebug) System.out.println(serverPort + " has sent    : " + resp + " type-"+resp.getType());
                     UDPServerSocket newServerSocket =  new UDPServerSocket(++serverPort,true);
                     newServerSocket.setInitialSeqNum(initialSeqNum, router, packet.getPeerAddress(), packet.getPeerPort());
                     return newServerSocket;
@@ -75,16 +75,16 @@ class UDPServerSocket {
         this.clientPort = clientPort;
     }
 
-    String receiveData() {
+    String receiveData(boolean printDebug) {
         if (printDebug) System.out.println("\nReceiving at port number " + serverPort);
-        SelectiveRepeat selectiveRepeatReceiver = new SelectiveRepeat(channel, clientAddress, clientPort, router);
+        SelectiveRepeat selectiveRepeatReceiver = new SelectiveRepeat(channel, clientAddress, clientPort, router, printDebug);
         sendSeqNum = selectiveRepeatReceiver.receiveData(initialSeqNum, SeqNumber, serverPort);
-        System.out.println("Received: " + selectiveRepeatReceiver.getData());
+        System.out.println("Server Received: " + selectiveRepeatReceiver.getData());
         return selectiveRepeatReceiver.getData();
     }
 
-    void sendData(String data) {
-        SelectiveRepeat selectiveRepeatSender = new SelectiveRepeat(channel, new InetSocketAddress("localhost", clientPort), routerAddress);
+    void sendData(String data, boolean printDebug) {
+        SelectiveRepeat selectiveRepeatSender = new SelectiveRepeat(channel, new InetSocketAddress("localhost", clientPort), routerAddress, printDebug);
         selectiveRepeatSender.sendData(data, sendSeqNum, SeqNumber);
     }
 

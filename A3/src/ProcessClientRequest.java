@@ -61,7 +61,7 @@ public class ProcessClientRequest implements Runnable{
 	            if (printDebug) 
 	            	System.out.println("\n**Sending Response**\n");
 	            System.out.println("Sent Response\n"+response);
-	            client.sendData(response.toString());
+	            client.sendData(response.toString(),printDebug);
 	            if (printDebug) 
 	            	System.out.println("\n**Complete**\n");
 	            Thread.sleep(3000);
@@ -189,7 +189,7 @@ public class ProcessClientRequest implements Runnable{
 
 	private void processRequest() throws Exception {
         String line;
-        br = new BufferedReader(new StringReader(client.receiveData()));
+        br = new BufferedReader(new StringReader(client.receiveData(printDebug)));
         while ((line = br.readLine()) != null) {
             //if (printDebug) 
             	//System.out.println("Line "+line);

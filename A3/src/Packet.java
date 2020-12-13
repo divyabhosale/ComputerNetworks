@@ -4,7 +4,6 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Packet represents a simulated network packet.
@@ -132,8 +131,7 @@ public class Packet {
 
     @Override
     public String toString() {
-//        return String.format("#%d peer=%s:%d, size=%d", sequenceNumber, peerAddress, peerPort, payload.length);
-        return String.format("type_%d #%d %s", getType(), getSequenceNumber(), new String(payload, UTF_8));
+       return String.format("#%d peer=%s:%d, size=%d", sequenceNumber, peerAddress, peerPort, payload.length);
     }
 
     public static class Builder {

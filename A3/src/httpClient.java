@@ -56,7 +56,7 @@ public class httpClient {
 			
 			//Connection TCP
 			//Socket socket = new Socket(InetAddress.getByName(host), PORT);
-			UDPClientSocket clientSocket = new UDPClientSocket(3000, PORT,true);
+			UDPClientSocket clientSocket = new UDPClientSocket(3000, PORT,displayHeader);
 
 			// Prepare request
             String request = "";
@@ -78,9 +78,9 @@ public class httpClient {
             request += "\r\n";
             request += data;
             
-            clientSocket.sendData(request);
+            clientSocket.sendData(request,displayHeader);
 			//Response
-            br = new BufferedReader(new StringReader(clientSocket.receiveData()));
+            br = new BufferedReader(new StringReader(clientSocket.receiveData(displayHeader)));
 
             String responseLine;
             String responseHeader = "";
@@ -155,7 +155,7 @@ public class httpClient {
 	
 		//Connection TCP
 		//Socket socket = new Socket(InetAddress.getByName(host), PORT);
-			UDPClientSocket clientSocket = new UDPClientSocket(3000, PORT,true);
+			UDPClientSocket clientSocket = new UDPClientSocket(3000, PORT,displayHeader);
 
 			// Prepare request
             String request = "";
@@ -187,9 +187,9 @@ public class httpClient {
             }
           
           
-            clientSocket.sendData(request);        
+            clientSocket.sendData(request,displayHeader);        
            //Response
-        br = new BufferedReader(new StringReader(clientSocket.receiveData()));
+        br = new BufferedReader(new StringReader(clientSocket.receiveData(displayHeader)));
 
         String responseLine;
         String responseHeader = "";
